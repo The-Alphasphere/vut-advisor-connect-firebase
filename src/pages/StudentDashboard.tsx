@@ -75,8 +75,8 @@ const StudentDashboard = () => {
             name: `${user.Name} ${user.Surname}`,
             email: user.email,
             avatar: `https://placehold.co/100x100/0ea5e9/ffffff?text=${user.Name.charAt(0)}`,
-            course: '',
-            faculty: ''
+            course: user.course,
+            faculty: user.faculty
         });
     }
   }, [user]);
