@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Home, BarChart2, Bell, Settings, User, Calendar, Clock, ChevronRight, ChevronLeft, Download, Plus, LogOut, Camera, Link as LinkIcon, Flag, CheckSquare, Square, Trash2, TrendingUp, Target, Lightbulb } from 'lucide-react';
+import { Home, BarChart2, Bell, Settings, User, Calendar, Clock, ChevronRight, ChevronLeft, Download, Plus, LogOut, Camera, Link as LinkIcon, Flag, CheckSquare, Square, Trash2, TrendingUp, Target, Lightbulb, Menu } from 'lucide-react';
 import { toast } from 'sonner';
 import { format, startOfMonth } from 'date-fns';
 import StudentSessionEvaluation from '@/components/StudentSessionEvaluation';
@@ -220,16 +220,34 @@ const StudentDashboard = () => {
   // --- RENDER ---
   return (
     <div className="flex flex-col min-h-screen bg-background font-sans">
+      {/* Mobile overlay */}
+      {isSidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-30 md:hidden"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
       <div className="flex flex-1">
         <Sidebar />
-        <div className={`flex-1 transition-all duration-300 ${isSidebarOpen ? 'ml-64' : 'ml-20'}`}>
-            <main className="p-8">
+        <div className={`flex-1 transition-all duration-300 ${isSidebarOpen ? 'md:ml-64' : 'md:ml-20'}`}>
+            {/* Mobile header with hamburger menu */}
+            <div className="md:hidden flex items-center justify-between p-4 bg-card border-b">
+              <button 
+                onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                className="p-2 rounded-lg hover:bg-accent"
+              >
+                <Menu size={20} />
+              </button>
+              <span className="font-semibold text-lg">VUT Advisor Connect</span>
+              <div className="w-10" /> {/* Spacer for centering */}
+            </div>
+            <main className="p-4 md:p-8">
                 {renderActiveSection()}
                 
             </main>
         </div>
       </div>
-      <div className={`transition-all duration-300 ${isSidebarOpen ? 'ml-64' : 'ml-20'}`}>
+      <div className={`transition-all duration-300 ${isSidebarOpen ? 'md:ml-64' : 'md:ml-20'}`}>
         <FooterSmall/>
       </div>
       
@@ -261,7 +279,7 @@ const StudentDashboard = () => {
   // --- SUB-COMPONENTS ---
   function Sidebar() {
     return (
-        <div className={`flex flex-col bg-card text-card-foreground transition-all duration-300 ${isSidebarOpen ? 'w-64' : 'w-20'} p-4 shadow-lg border-r fixed left-0 top-0 bottom-0 z-40 overflow-y-auto`}>
+        <div className={`flex flex-col bg-card text-card-foreground transition-all duration-300 ${isSidebarOpen ? 'w-64' : 'w-20'} p-4 shadow-lg border-r fixed left-0 top-0 bottom-0 z-40 overflow-y-auto transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
             <div className="flex items-center justify-between mb-8">
                 {isSidebarOpen && (
                     <div 
@@ -281,7 +299,9 @@ const StudentDashboard = () => {
                         <span className="text-lg font-semibold">{userProfile.name}</span>
                     </div>
                 )}
-                <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="p-2 rounded-full hover:bg-accent"><ChevronLeft size={20} /></button>
+                <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="p-2 rounded-full hover:bg-accent">
+                  {isSidebarOpen ? <ChevronLeft size={20} /> : <ChevronRight size={20} />}
+                </button>
             </div>
             <nav className="flex-grow">
                 <ul>
@@ -316,18 +336,20 @@ const StudentDashboard = () => {
     
     return (
         <>
-            <header className="flex justify-between items-center mb-8">
-                <h1 className="text-3xl font-bold">Welcome back, {userProfile.name.split(' ')[0]}!</h1>
-                <Button onClick={() => setShowBookingDialog(true)} size="lg" className="shadow-lg"><Plus size={16} className="mr-2"/> Book a New Session</Button>
+            <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 md:mb-8 gap-4">
+                <h1 className="text-2xl md:text-3xl font-bold">Welcome back, {userProfile.name.split(' ')[0]}!</h1>
+                <Button onClick={() => setShowBookingDialog(true)} size="lg" className="shadow-lg w-full sm:w-auto">
+                  <Plus size={16} className="mr-2"/> Book Session
+                </Button>
             </header>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8">
                 <InsightCard title="Total Sessions" value={sessions.length} />
                 <InsightCard title="Upcoming" value={upcomingSessions.length} />
                 <InsightCard title="Completed" value={pastSessions.length} />
                 <InsightCard title="To Evaluate" value={toEvaluateSessions.length} />
             </div>
             
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-8">
                 {/* Recent Notifications */}
                 <Card>
                     <CardHeader>
@@ -388,7 +410,16 @@ const StudentDashboard = () => {
   }
   
   function InsightCard({ title, value }: { title: string, value: string | number }) {
-    return <Card><CardHeader><CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle></CardHeader><CardContent><p className="text-2xl font-bold">{value}</p></CardContent></Card>;
+    return (
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-xs md:text-sm font-medium text-muted-foreground">{title}</CardTitle>
+        </CardHeader>
+        <CardContent className="pt-0">
+          <p className="text-lg md:text-2xl font-bold">{value}</p>
+        </CardContent>
+      </Card>
+    );
   }
 
   function MySessionsSection() {
@@ -399,13 +430,13 @@ const StudentDashboard = () => {
         return [];
     };
     return <>
-        <div className="flex justify-between items-center mb-8">
-            <h1 className="text-3xl font-bold">My Sessions</h1>
-            <Button onClick={() => setShowBookingDialog(true)} className="shadow-lg">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 md:mb-8 gap-4">
+            <h1 className="text-2xl md:text-3xl font-bold">My Sessions</h1>
+            <Button onClick={() => setShowBookingDialog(true)} className="shadow-lg w-full sm:w-auto">
                 <Plus size={16} className="mr-2"/> Book Session
             </Button>
         </div>
-        <div className="flex gap-2 mb-4 border-b">
+        <div className="flex gap-1 md:gap-2 mb-4 border-b overflow-x-auto">
             <TabButton title={`Upcoming (${upcomingSessions.length})`} isActive={activeSessionTab === 'upcoming'} onClick={() => setActiveSessionTab('upcoming')} />
             <TabButton title={`To Evaluate (${toEvaluateSessions.length})`} isActive={activeSessionTab === 'to-evaluate'} onClick={() => setActiveSessionTab('to-evaluate')} />
             <TabButton title={`Past (${pastSessions.length})`} isActive={activeSessionTab === 'past'} onClick={() => setActiveSessionTab('past')} />
@@ -420,11 +451,25 @@ const StudentDashboard = () => {
   }
   
   function TabButton({ title, isActive, onClick}: any) {
-    return <button onClick={onClick} className={`py-2 px-4 text-sm font-medium ${isActive ? 'border-b-2 border-primary text-primary' : 'text-muted-foreground'}`}>{title}</button>
+    return <button onClick={onClick} className={`py-2 px-2 md:px-4 text-xs md:text-sm font-medium whitespace-nowrap ${isActive ? 'border-b-2 border-primary text-primary' : 'text-muted-foreground'}`}>{title}</button>
   }
   
   function SessionCard({ session }: { session: Session }) { 
-    return <Card><CardContent className="p-4 flex justify-between items-center"><div><p className="font-semibold">{session.advisor_name}</p><p className="text-sm text-muted-foreground">{session.session_details.reasons.join(', ')}</p></div><div><p>{format(session.session_date.toDate(), 'PPP, p')}</p><Badge>{session.status}</Badge></div></CardContent></Card>
+    return (
+      <Card>
+        <CardContent className="p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+          <div className="flex-1 min-w-0">
+            <p className="font-semibold truncate">{session.advisor_name}</p>
+            <p className="text-sm text-muted-foreground line-clamp-2">{session.session_details.reasons.join(', ')}</p>
+          </div>
+          <div className="text-right sm:text-left">
+            <p className="text-sm md:text-base">{format(session.session_date.toDate(), 'MMM dd, yyyy')}</p>
+            <p className="text-xs md:text-sm text-muted-foreground">{format(session.session_date.toDate(), 'p')}</p>
+            <Badge className="mt-1">{session.status}</Badge>
+          </div>
+        </CardContent>
+      </Card>
+    );
   }
 
   function AnalyticsSection() {
@@ -442,10 +487,10 @@ const StudentDashboard = () => {
     ];
 
     return <>
-        <h1 className="text-3xl font-bold mb-8">My Academic Journey</h1>
+        <h1 className="text-2xl md:text-3xl font-bold mb-6 md:mb-8">My Academic Journey</h1>
         <div className="space-y-8">
                      {/* First Charts Row */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-8 mb-6 md:mb-8">
                         <Card>
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2">
@@ -487,7 +532,7 @@ const StudentDashboard = () => {
                     </div>
 
                     {/* Second Charts Row */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-8 mb-6 md:mb-8">
                         <Card>
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2">
@@ -529,7 +574,7 @@ const StudentDashboard = () => {
                     </div>
 
                     {/* Third Charts Row */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-8 mb-6 md:mb-8">
                         <Card>
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2">
@@ -573,7 +618,7 @@ const StudentDashboard = () => {
                     </div>
 
                     {/* Timeline and AI Insights Row */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-8">
                         <Card>
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2">
@@ -634,7 +679,7 @@ const StudentDashboard = () => {
   function MyAdvisorSection() {
      if (!primaryAdvisor) return (
        <>
-         <h1 className="text-3xl font-bold mb-8">My Advisor</h1>
+        <h1 className="text-2xl md:text-3xl font-bold mb-6 md:mb-8">My Advisor</h1>
          <Card>
            <CardContent className="p-6 text-center text-muted-foreground">
              Your primary advisor has not been assigned.
@@ -645,7 +690,7 @@ const StudentDashboard = () => {
      
      return (
        <>
-         <h1 className="text-3xl font-bold mb-8">My Advisor</h1>
+         <h1 className="text-2xl md:text-3xl font-bold mb-6 md:mb-8">My Advisor</h1>
          <Card>
            <CardHeader>
              <CardTitle>{primaryAdvisor.name} {primaryAdvisor.surname}</CardTitle>
@@ -662,7 +707,7 @@ const StudentDashboard = () => {
   function ResourceHubSection() {
     return (
       <>
-        <h1 className="text-3xl font-bold mb-8">Resource Hub</h1>
+        <h1 className="text-2xl md:text-3xl font-bold mb-6 md:mb-8">Resource Hub</h1>
         <Card>
           <CardContent className="p-6 text-center text-muted-foreground">
             Resource hub coming soon.
@@ -675,18 +720,19 @@ const StudentDashboard = () => {
   function GoalTrackerSection() {
      return (
        <>
-         <h1 className="text-3xl font-bold mb-8">Goal Tracker</h1>
+         <h1 className="text-2xl md:text-3xl font-bold mb-6 md:mb-8">Goal Tracker</h1>
          <Card>
            <CardContent className="p-6">
-             <div className="flex gap-2 mb-4">
-               <Input 
-                 value={newGoal} 
-                 onChange={(e) => setNewGoal(e.target.value)} 
-                 placeholder="Add a new goal..." 
-                 onKeyPress={(e) => e.key === 'Enter' && addGoal()} 
-               />
-               <Button onClick={addGoal}>Add Goal</Button>
-             </div>
+              <div className="flex flex-col sm:flex-row gap-2 mb-4">
+                <Input 
+                  value={newGoal} 
+                  onChange={(e) => setNewGoal(e.target.value)} 
+                  placeholder="Add a new goal..." 
+                  onKeyPress={(e) => e.key === 'Enter' && addGoal()}
+                  className="flex-1" 
+                />
+                <Button onClick={addGoal} className="w-full sm:w-auto">Add Goal</Button>
+              </div>
              <div className="space-y-2">
                {goals.map(goal => (
                  <div key={goal.id} className="flex items-center gap-3 p-2 rounded hover:bg-accent">
@@ -719,7 +765,7 @@ const StudentDashboard = () => {
   function NotificationsSection() {
     return (
       <>
-        <h1 className="text-3xl font-bold mb-8">Notifications</h1>
+        <h1 className="text-2xl md:text-3xl font-bold mb-6 md:mb-8">Notifications</h1>
         <Card>
           <CardContent className="p-6 text-center text-muted-foreground">
             You have no new notifications.
@@ -737,8 +783,8 @@ const StudentDashboard = () => {
 
     return (
       <>
-        <h1 className="text-3xl font-bold mb-8">Settings</h1>
-        <div className="grid gap-6 md:grid-cols-2">
+        <h1 className="text-2xl md:text-3xl font-bold mb-6 md:mb-8">Settings</h1>
+        <div className="grid gap-4 md:gap-6 md:grid-cols-2">
             <Card>
                 <CardHeader><CardTitle>Appearance</CardTitle></CardHeader>
                 <CardContent className="space-y-4">
