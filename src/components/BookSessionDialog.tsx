@@ -8,8 +8,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Calendar, Plus, XCircle, Eye } from 'lucide-react';
-import { format, isWeekend, startOfDay } from 'date-fns';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Calendar, Plus, XCircle, Eye, ChevronDown, Check } from 'lucide-react';
+import { format, isWeekend, startOfDay, addDays, isSameDay } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
@@ -73,6 +74,26 @@ const BookSessionDialog = ({
     '08:00 - 09:00', '09:00 - 10:00', '10:00 - 11:00', '11:00 - 12:00',
     '12:00 - 13:00', '13:00 - 14:00', '14:00 - 15:00', '15:00 - 16:00', '16:00 - 17:00'
   ];
+
+  // Define holidays (you can customize this list)
+  const holidays = [
+    new Date('2025-01-01'), // New Year's Day
+    new Date('2025-03-21'), // Human Rights Day
+    new Date('2025-04-18'), // Good Friday
+    new Date('2025-04-21'), // Family Day
+    new Date('2025-04-27'), // Freedom Day
+    new Date('2025-05-01'), // Workers' Day
+    new Date('2025-06-16'), // Youth Day
+    new Date('2025-08-09'), // National Women's Day
+    new Date('2025-09-24'), // Heritage Day
+    new Date('2025-12-16'), // Day of Reconciliation
+    new Date('2025-12-25'), // Christmas Day
+    new Date('2025-12-26'), // Day of Goodwill
+  ];
+
+  const isHoliday = (date: Date) => {
+    return holidays.some(holiday => isSameDay(date, holiday));
+  };
 
   const validateGroupMemberEmail = (email: string) => {
     return email.endsWith('@edu.vut.ac.za');
@@ -288,9 +309,16 @@ const BookSessionDialog = ({
                     mode="single"
                     selected={selectedDate}
                     onSelect={setSelectedDate}
-                    disabled={(date) =>
-                      isWeekend(date) || startOfDay(date) < startOfDay(new Date())
-                    }
+                    disabled={(date) => {
+                      const today = startOfDay(new Date());
+                      const fifteenDaysFromNow = addDays(today, 15);
+                      return (
+                        isWeekend(date) || 
+                        startOfDay(date) < today || 
+                        startOfDay(date) > fifteenDaysFromNow ||
+                        isHoliday(date)
+                      );
+                    }}
                     initialFocus
                     className={cn("p-3 pointer-events-auto")}
                   />
@@ -301,28 +329,52 @@ const BookSessionDialog = ({
             {/* Reason for Session */}
             <div>
               <Label className="mb-2 block font-medium">Reason for Session * (Select all that apply)</Label>
-              <div className="space-y-2 max-h-48 overflow-y-auto border rounded-md p-3">
-                {reasonOptions.map(reason => (
-                  <label key={reason} className="flex items-center space-x-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={selectedReasons.includes(reason)}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setSelectedReasons([...selectedReasons, reason]);
-                        } else {
-                          setSelectedReasons(selectedReasons.filter(r => r !== reason));
-                          if (reason === 'Other') {
-                            setOtherReasonText('');
-                          }
-                        }
-                      }}
-                      className="rounded border-gray-300"
-                    />
-                    <span className="text-sm">{reason}</span>
-                  </label>
-                ))}
-              </div>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-between text-left font-normal"
+                  >
+                    {selectedReasons.length === 0 
+                      ? "Select reasons for session" 
+                      : `${selectedReasons.length} reason${selectedReasons.length > 1 ? 's' : ''} selected`
+                    }
+                    <ChevronDown className="h-4 w-4 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0" align="start">
+                  <div className="max-h-60 overflow-y-auto p-4 space-y-2">
+                    {reasonOptions.map(reason => (
+                      <div key={reason} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={reason}
+                          checked={selectedReasons.includes(reason)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setSelectedReasons([...selectedReasons, reason]);
+                            } else {
+                              setSelectedReasons(selectedReasons.filter(r => r !== reason));
+                              if (reason === 'Other') {
+                                setOtherReasonText('');
+                              }
+                            }
+                          }}
+                        />
+                        <Label htmlFor={reason} className="text-sm font-normal cursor-pointer flex-1">
+                          {reason}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                </PopoverContent>
+              </Popover>
+              
+              {/* Show selected reasons */}
+              {selectedReasons.length > 0 && (
+                <div className="mt-2 text-sm text-muted-foreground">
+                  Selected: {selectedReasons.join(', ')}
+                </div>
+              )}
               
               {/* Other reason text field */}
               {selectedReasons.includes('Other') && (
