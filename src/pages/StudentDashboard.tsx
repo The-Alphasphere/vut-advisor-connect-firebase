@@ -30,7 +30,7 @@ interface Session {
   session_details: {
     reasons: string[];
     sessionType?: string;
-    groupMembers?: { name: string; email: string }[];
+    groupMembers?: { name: string; surname: string; email: string }[];
   };
   reference_code: string;
 }
@@ -63,7 +63,9 @@ const StudentDashboard = () => {
   const [userProfile, setUserProfileState] = useState({
       name: '',
       email: '',
-      avatar: ''
+      avatar: '',
+      course: '',
+      faculty:''
   });
 
   useEffect(() => {
@@ -71,7 +73,9 @@ const StudentDashboard = () => {
         setUserProfileState({
             name: `${user.Name} ${user.Surname}`,
             email: user.email,
-            avatar: `https://placehold.co/100x100/0ea5e9/ffffff?text=${user.Name.charAt(0)}`
+            avatar: `https://placehold.co/100x100/0ea5e9/ffffff?text=${user.Name.charAt(0)}`,
+            course: user.course,
+            faculty: user.faculty
         });
     }
   }, [user]);
@@ -621,7 +625,7 @@ const StudentDashboard = () => {
      if (!primaryAdvisor) return <><h1 className="text-3xl font-bold mb-8">My Advisor</h1><Card><CardContent className="p-6 text-center text-muted-foreground">Your primary advisor has not been assigned.</CardContent></Card></>
      return <><h1 className="text-3xl font-bold mb-8">My Advisor</h1>
       <Card><CardHeader><CardTitle>{primaryAdvisor.fullName}</CardTitle></CardHeader>
-          <CardContent><p><strong>Email:</strong> {primaryAdvisor.email}</p><p><strong>Office:</strong> {primaryAdvisor.office || 'TBA'}</p></CardContent>
+          <CardContent><p><strong>Email:</strong> {primaryAdvisor.email}</p><p><strong><p><strong>Email:</strong> {primaryAdvisor.email}</p><p><strong>Office:</strong> {primaryAdvisor.office || 'TBA'}</p></CardContent>
       </Card>
      </>
   }
