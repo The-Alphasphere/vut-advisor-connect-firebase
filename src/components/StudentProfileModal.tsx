@@ -121,21 +121,21 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
                   Course
                 </Label>
                 <Input
-                  id="surname"
-                  value={user.Course}
+                  id="course"
+                  value={user.course}
                   disabled
                   className="bg-muted"
                 />
             </div>
 
             <div>
-                <Label htmlFor="Faculty" className="flex items-center gap-2">
+                <Label htmlFor="faculty" className="flex items-center gap-2">
                   <User size={16} />
                   Faculty
                 </Label>
                 <Input
-                  id="surname"
-                  value={user.Faculty}
+                  id="faculty"
+                  value={user.faculty}
                   disabled
                   className="bg-muted"
                 />
