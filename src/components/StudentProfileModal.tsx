@@ -116,29 +116,31 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
             </div>
 
             <div>
-              <Label htmlFor="course" className="flex items-center gap-2">
-                <GraduationCap size={16} />
-                Course
-              </Label>
-              <Input
-                id="course"
-                value={user.course}
-                disabled
-                onChange={(e) => setProfileData(prev => ({ ...prev, course: e.target.value }))}
-              />
+                <Label htmlFor="surname" className="flex items-center gap-2">
+                  <User size={16} />
+                  Course
+                </Label>
+                <Input
+                  id="surname"
+                  value={course.Surname}
+                  disabled
+                  className="bg-muted"
+                />
+              </div>
             </div>
 
             <div>
-              <Label htmlFor="faculty" className="flex items-center gap-2">
-                <Building2 size={16} />
-                Faculty
-              </Label>
-              <Input
-                id="faculty"
-                value={user.faculty}
-                disabled
-                onChange={(e) => setProfileData(prev => ({ ...prev, faculty: e.target.value }))}
-              />
+                <Label htmlFor="surname" className="flex items-center gap-2">
+                  <User size={16} />
+                  Faculty
+                </Label>
+                <Input
+                  id="surname"
+                  value={faculty.Surname}
+                  disabled
+                  className="bg-muted"
+                />
+              </div>
             </div>
           </div>
 
