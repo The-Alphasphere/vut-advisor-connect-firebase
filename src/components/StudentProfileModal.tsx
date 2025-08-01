@@ -122,7 +122,7 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
                 </Label>
                 <Input
                     id="course"
-                    value={userProfile.course}
+                    value={user.course}
                     disabled
                     className="bg-muted"
                 />
@@ -135,7 +135,7 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
                 </Label>
                 <Input
                     id="faculty"
-                    value={userProfile.faculty}
+                    value={user.faculty}
                     disabled
                     className="bg-muted"
                 />
