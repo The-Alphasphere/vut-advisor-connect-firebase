@@ -18,11 +18,18 @@ interface GroupMember {
   email: string;
 }
 
+// Assuming the advisor object has this structure
+interface Advisor {
+    name: string;
+    room_number: string;
+    // other properties can exist
+}
+
 interface BookSessionDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onBookSession: (sessionData: any) => void;
-  advisors: any[];
+  advisors: Advisor[]; // Using a more specific type for clarity
   bookedSlots: string[];
 }
 
@@ -48,15 +55,6 @@ const BookSessionDialog = ({
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const reasonOptions = [
-    'Academic Advising',
-    'Career Guidance',
-    'Course Selection',
-    'Time Management',
-    'Graduation Requirements',
-    'Financial Aid',
-    'Study Abroad',
-    'Internship Guidance',
-    'Research Opportunities',
     'Academic Planning (change course/major)',
     'Academic Performance',
     'Career Development',
@@ -66,6 +64,15 @@ const BookSessionDialog = ({
     'Goal Setting & Time management',
     'Revision Planning & Exam preparation',
     'Personal Development & Wellness',
+    'Academic Advising',
+    'Career Guidance',
+    'Course Selection',
+    'Time Management',
+    'Graduation Requirements',
+    'Financial Aid',
+    'Study Abroad',
+    'Internship Guidance',
+    'Research Opportunities',
     'Other'
   ];
 
@@ -153,7 +160,8 @@ const BookSessionDialog = ({
       otherReasonText: selectedReasons.includes('Other') ? otherReasonText : undefined,
       mode,
       groupMembers: sessionType === 'group' ? groupMembers.filter(m => m.name && m.surname && m.email) : undefined,
-      comments
+      comments,
+      advisor: advisors && advisors.length > 0 ? advisors[0] : null
     };
     
     onBookSession(sessionData);
@@ -177,6 +185,7 @@ const BookSessionDialog = ({
 
   const today = startOfDay(new Date());
   const maxDate = addDays(today, 10);
+  const advisor = advisors && advisors.length > 0 ? advisors[0] : null;
 
   return (
     <>
@@ -237,9 +246,9 @@ const BookSessionDialog = ({
                       <div key={index} className="space-y-2">
                         <h4 className="font-medium text-sm">Student {index + 1}</h4>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                          <Input placeholder="First Name" value={member.name} onChange={(e) => updateGroupMember(index, 'name', e.target.value)} />
-                          <Input placeholder="Last Name" value={member.surname} onChange={(e) => updateGroupMember(index, 'surname', e.target.value)} />
-                          <Input placeholder="Email (@edu.vut.ac.za)" value={member.email} onChange={(e) => updateGroupMember(index, 'email', e.target.value)} />
+                          <Input placeholder="First Name" value={member.name} onChange={(e) => updateGroupMember(index, 'name', e.target.value)} maxLength={50} />
+                          <Input placeholder="Last Name" value={member.surname} onChange={(e) => updateGroupMember(index, 'surname', e.target.value)} maxLength={50} />
+                          <Input placeholder="Email (@edu.vut.ac.za)" value={member.email} onChange={(e) => updateGroupMember(index, 'email', e.target.value)} maxLength={50} />
                         </div>
                       </div>
                     ))}
@@ -283,15 +292,26 @@ const BookSessionDialog = ({
                         </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                        <div className="p-2 space-y-1 max-h-[250px] overflow-y-auto">
-                            {reasonOptions.map(reason => {
+                        <div className="p-1 max-h-[250px] overflow-y-auto">
+                            {reasonOptions.map((reason, index) => {
                                 const isSelected = selectedReasons.includes(reason);
                                 const isDisabled = !isSelected && selectedReasons.length >= 5;
                                 return (
-                                    <div key={reason} onClick={() => !isDisabled && handleReasonSelect(reason)} className={cn("flex items-center space-x-3 p-2 rounded-md", isDisabled ? "text-muted-foreground opacity-50 cursor-not-allowed" : "cursor-pointer hover:bg-accent")}>
-                                        <input type="checkbox" readOnly checked={isSelected} className={cn("h-4 w-4", isDisabled ? "cursor-not-allowed" : "cursor-pointer")} />
-                                        <Label className={cn("font-normal", isDisabled ? "cursor-not-allowed" : "cursor-pointer")}>{reason}</Label>
-                                    </div>
+                                    <label
+                                        key={index}
+                                        htmlFor={`reason-${index}`}
+                                        className={cn("flex items-center space-x-3 p-2 rounded-md", isDisabled ? "text-muted-foreground opacity-50" : "cursor-pointer hover:bg-accent")}
+                                    >
+                                        <input
+                                            id={`reason-${index}`}
+                                            type="checkbox"
+                                            checked={isSelected}
+                                            disabled={isDisabled}
+                                            onChange={() => handleReasonSelect(reason)}
+                                            className={cn("h-4 w-4", isDisabled ? "" : "cursor-pointer")}
+                                        />
+                                        <span className={cn("font-normal flex-1", isDisabled ? "" : "cursor-pointer")}>{reason}</span>
+                                    </label>
                                 );
                             })}
                         </div>
@@ -355,25 +375,35 @@ const BookSessionDialog = ({
             <AlertDialogTitle>Preview Session Booking</AlertDialogTitle>
             <AlertDialogDescription asChild>
               <div className="space-y-4 text-sm pt-2">
-                <div><strong>Session Type:</strong> {sessionType === 'individual' ? 'Individual Session' : 'Group Session'}</div>
-                <div><strong>Date:</strong> {selectedDate ? format(selectedDate, 'PPP') : 'N/A'}</div>
-                <div><strong>Time:</strong> {selectedTime || 'N/A'}</div>
-                <div>
-                  <strong>Reason(s):</strong>
-                  <ul className="list-disc list-inside ml-4 mt-1">
-                    {selectedReasons.map(reason => (<li key={reason}>{reason === 'Other' && otherReasonText ? `Other: ${otherReasonText}` : reason}</li>))}
-                  </ul>
-                </div>
-                <div><strong>Mode:</strong> {mode === 'in-person' ? 'In-person' : 'Online'}</div>
-                {sessionType === 'group' && (
-                  <div>
-                    <strong>Group Members:</strong>
-                    <ul className="ml-4 mt-1 list-disc list-inside">
-                      {groupMembers.filter(m => m.name && m.surname && m.email).map((member, index) => (<li key={index}>{member.name} {member.surname} ({member.email})</li>))}
-                    </ul>
-                  </div>
+                {advisor && (
+                    <div className='border-b pb-4'>
+                        <h3 className='text-base font-semibold text-foreground mb-2'>Advisor Details</h3>
+                        <div><strong>Name:</strong> {advisor.name}</div>
+                        <div><strong>Room:</strong> {advisor.room_number}</div>
+                    </div>
                 )}
-                {comments && (<div><strong>Comments:</strong> {comments}</div>)}
+                <div className='space-y-4'>
+                    <h3 className='text-base font-semibold text-foreground -mb-2'>Session Details</h3>
+                    <div><strong>Session Type:</strong> {sessionType === 'individual' ? 'Individual Session' : 'Group Session'}</div>
+                    <div><strong>Date:</strong> {selectedDate ? format(selectedDate, 'PPP') : 'N/A'}</div>
+                    <div><strong>Time:</strong> {selectedTime || 'N/A'}</div>
+                    <div>
+                    <strong>Reason(s):</strong>
+                    <ul className="list-disc list-inside ml-4 mt-1">
+                        {selectedReasons.map(reason => (<li key={reason}>{reason === 'Other' && otherReasonText ? `Other: ${otherReasonText}` : reason}</li>))}
+                    </ul>
+                    </div>
+                    <div><strong>Mode:</strong> {mode === 'in-person' ? 'In-person' : 'Online'}</div>
+                    {sessionType === 'group' && (
+                    <div>
+                        <strong>Group Members:</strong>
+                        <ul className="ml-4 mt-1 list-disc list-inside">
+                        {groupMembers.filter(m => m.name && m.surname && m.email).map((member, index) => (<li key={index}>{member.name} {member.surname} ({member.email})</li>))}
+                        </ul>
+                    </div>
+                    )}
+                    {comments && (<div><strong>Comments:</strong> {comments}</div>)}
+                </div>
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>

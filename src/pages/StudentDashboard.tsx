@@ -7,18 +7,17 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Home, BarChart2, Bell, Settings, User, Calendar, Clock, ChevronRight, ChevronLeft, Download, Plus, LogOut, Camera, Link as LinkIcon, Flag, CheckSquare, Square, Trash2, TrendingUp, Target, Lightbulb } from 'lucide-react';
+import { Home, BarChart2, Bell, Settings, User, Calendar, Clock, ChevronRight, ChevronLeft, Download, Plus, LogOut, Camera, Link as LinkIcon, Flag, CheckSquare, Square, Trash2, TrendingUp, Target, Lightbulb, Users } from 'lucide-react';
 import { toast } from 'sonner';
 import { format, startOfMonth } from 'date-fns';
 import StudentSessionEvaluation from '@/components/StudentSessionEvaluation';
 import BookSessionDialog from '@/components/BookSessionDialog';
 import LogoutConfirmation from '@/components/LogoutConfirmation';
 import jsPDF from 'jspdf';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
 import FooterSmall from '@/components/FooterSmall';
 import Header from '@/components/Header';
 import StudentProfileModal from '@/components/StudentProfileModal';
-import { LineChart, Line } from 'recharts';
 
 // --- INTERFACES ---
 interface Session {
@@ -29,9 +28,13 @@ interface Session {
   session_date: { toDate: () => Date };
   status: 'Pending' | 'Confirmed' | 'Completed' | 'To Complete' | 'Cancelled';
   session_details: {
-    reasons: string[];
-    sessionType?: string;
+    reasons: string[]; // This will store selectedReasons
+    otherReason?: string; // For the "Other" text
+    sessionType: 'individual' | 'group';
     groupMembers?: { name: string; surname: string; email: string }[];
+    mode: 'in-person' | 'online';
+    time: string;
+    advisor: { name: string; room_number: string; };
   };
   reference_code: string;
 }
@@ -42,6 +45,14 @@ interface Goal {
     completed: boolean;
 }
 
+// Minimal advisor type for props
+interface Advisor {
+    id: string;
+    name: string;
+    room_number: string;
+    // other properties can exist
+}
+
 const StudentDashboard = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -49,8 +60,8 @@ const StudentDashboard = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   
   const [sessions, setSessions] = useState<Session[]>([]);
-  const [advisors, setAdvisors] = useState<any[]>([]);
-  const [primaryAdvisor, setPrimaryAdvisor] = useState<any>(null);
+  const [advisors, setAdvisors] = useState<Advisor[]>([]);
+  const [primaryAdvisor, setPrimaryAdvisor] = useState<Advisor | null>(null);
   const [goals, setGoals] = useState<Goal[]>([]);
   const [newGoal, setNewGoal] = useState("");
   const [loading, setLoading] = useState(true);
@@ -97,12 +108,16 @@ const StudentDashboard = () => {
                 const advisorDocRef = doc(db, "users", userData.primaryAdvisorId);
                 getDoc(advisorDocRef).then(advisorDoc => {
                     if (advisorDoc.exists()) {
-                        setPrimaryAdvisor({ id: advisorDoc.id, ...advisorDoc.data() });
+                        const advisorData = advisorDoc.data();
+                        setPrimaryAdvisor({ 
+                            id: advisorDoc.id, 
+                            name: advisorData.fullName || 'N/A', 
+                            room_number: advisorData.office || 'N/A' 
+                        });
                     }
                 });
             }
         } else {
-            // Handle case where user document doesn't exist
             setLoading(false);
         }
     });
@@ -115,7 +130,17 @@ const StudentDashboard = () => {
     });
 
     const advisorsQuery = query(collection(db, "users"), where("role", "==", "advisor"));
-    const unsubscribeAdvisors = onSnapshot(advisorsQuery, (snapshot) => setAdvisors(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))));
+    const unsubscribeAdvisors = onSnapshot(advisorsQuery, (snapshot) => {
+        const fetchedAdvisors = snapshot.docs.map(doc => {
+            const data = doc.data();
+            return {
+                id: doc.id,
+                name: data.fullName || 'N/A',
+                room_number: data.office || 'N/A'
+            };
+        });
+        setAdvisors(fetchedAdvisors);
+    });
     
     const goalsQuery = query(collection(db, "users", user.uuid, "goals"));
     const unsubscribeGoals = onSnapshot(goalsQuery, (snapshot) => setGoals(snapshot.docs.map(doc => ({id: doc.id, ...doc.data() } as Goal))));
@@ -142,6 +167,7 @@ const StudentDashboard = () => {
     }, {} as Record<string, number>);
     return Object.entries(monthCounts).map(([name, sessions]) => ({ name, sessions }));
   }, [sessions]);
+
   const sessionReasonData = useMemo(() => {
     if (sessions.length === 0) return [];
       const reasonCounts = sessions.reduce((acc, session) => {
@@ -149,7 +175,7 @@ const StudentDashboard = () => {
           return acc;
       }, {} as Record<string, number>);
 
-      const colors = ['#0ea5e9', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
+      const colors = ['#0ea5e9', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#f43f5e', '#14b8a6'];
       return Object.entries(reasonCounts).map(([name, value], index) => ({ name, value, color: colors[index % colors.length] }));
   }, [sessions]);
 
@@ -163,27 +189,52 @@ const StudentDashboard = () => {
     return Object.entries(statusCounts).map(([name, value], index) => ({ name, value, color: colors[index % colors.length] }));
   }, [sessions]);
 
-  const sessionsPerWeek = useMemo(() => {
-    if (sessions.length === 0) return [];
-    const weekCounts = sessions.reduce((acc, session) => {
-      const week = format(session.session_date.toDate(), 'yyyy-MM-dd');
-      acc[week] = (acc[week] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-    return Object.entries(weekCounts).map(([name, sessions]) => ({ name, sessions })).slice(-8);
-  }, [sessions]);
-
-  const performanceData = useMemo(() => {
-    if (sessions.length === 0) return [];
-    return sessions.slice(-6).map((session, index) => ({
-      session: `Session ${index + 1}`,
-      satisfaction: Math.floor(Math.random() * 3) + 3, // Mock data 3-5
-      progress: Math.floor(Math.random() * 40) + 60 // Mock data 60-100
-    }));
-  }, [sessions]);
-
-
   // -- HANDLERS -- //
+  const handleBookSession = async (sessionData: any) => {
+    if (!user || !primaryAdvisor) {
+        toast.error("Cannot book session: User or advisor information is missing.");
+        return;
+    }
+
+    try {
+        const { selectedDate, selectedTime, selectedReasons, otherReasonText, mode, sessionType, groupMembers } = sessionData;
+
+        const sessionDateTime = new Date(selectedDate);
+        const [startHour, startMinute] = selectedTime.split(' - ')[0].split(':');
+        sessionDateTime.setHours(parseInt(startHour, 10), parseInt(startMinute, 10));
+
+        const newSession = {
+            student_id: user.uuid,
+            advisor_id: primaryAdvisor.id,
+            advisor_name: primaryAdvisor.name,
+            session_date: sessionDateTime,
+            status: 'Pending',
+            created_at: serverTimestamp(),
+            reference_code: `VUT-${Date.now().toString().slice(-6)}`,
+            session_details: {
+                reasons: selectedReasons,
+                otherReason: otherReasonText || '',
+                sessionType: sessionType,
+                groupMembers: groupMembers || [],
+                mode: mode,
+                time: selectedTime,
+                advisor: {
+                    name: primaryAdvisor.name,
+                    room_number: primaryAdvisor.room_number
+                }
+            }
+        };
+
+        await addDoc(collection(db, "sessions"), newSession);
+        toast.success("Session booked successfully!");
+        setShowBookingDialog(false);
+
+    } catch (error) {
+        console.error("Error booking session:", error);
+        toast.error("Failed to book session. Please try again.");
+    }
+  };
+
   const addGoal = async () => {
     if (newGoal.trim() === "" || !user) return;
     await addDoc(collection(db, "users", user.uuid, "goals"), { text: newGoal, completed: false, createdAt: serverTimestamp() });
@@ -225,7 +276,6 @@ const StudentDashboard = () => {
         <div className={`flex-1 transition-all duration-300 ${isSidebarOpen ? 'ml-64' : 'ml-20'}`}>
             <main className="p-8">
                 {renderActiveSection()}
-                
             </main>
         </div>
       </div>
@@ -233,7 +283,13 @@ const StudentDashboard = () => {
         <FooterSmall/>
       </div>
       
-      <BookSessionDialog open={showBookingDialog} onOpenChange={setShowBookingDialog} onBookSession={() => {}} advisors={advisors} bookedSlots={[]} />
+      <BookSessionDialog 
+        open={showBookingDialog} 
+        onOpenChange={setShowBookingDialog} 
+        onBookSession={handleBookSession} 
+        advisors={primaryAdvisor ? [primaryAdvisor] : []} 
+        bookedSlots={[]} 
+      />
       {showEvaluation && evaluationSession && <StudentSessionEvaluation isOpen={showEvaluation} session={evaluationSession} onClose={() => setShowEvaluation(false)} onSubmit={() => {}} />}
       <StudentProfileModal 
         isOpen={showProfileModal} 
@@ -312,12 +368,6 @@ const StudentDashboard = () => {
   
   function MainDashboardView() {
     const recentSessions = upcomingSessions.slice(0, 3);
-    const recentNotifications = [
-      { id: 1, message: "Session with Dr. Smith scheduled for tomorrow", time: "2 hours ago", type: "session" },
-      { id: 2, message: "Please complete evaluation for your last session", time: "1 day ago", type: "evaluation" },
-      { id: 3, message: "New resources added to your course materials", time: "3 days ago", type: "resource" }
-    ];
-    
     return (
         <>
             <header className="flex justify-between items-center mb-8">
@@ -332,53 +382,17 @@ const StudentDashboard = () => {
             </div>
             
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                {/* Recent Notifications */}
                 <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <Bell size={20} />
-                            Recent Notifications
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="space-y-3">
-                            {recentNotifications.map(notification => (
-                                <div key={notification.id} className="flex items-start gap-3 p-3 rounded-lg hover:bg-accent">
-                                    <div className={`w-2 h-2 rounded-full mt-2 ${
-                                        notification.type === 'session' ? 'bg-blue-500' : 
-                                        notification.type === 'evaluation' ? 'bg-orange-500' : 'bg-green-500'
-                                    }`} />
-                                    <div className="flex-1">
-                                        <p className="text-sm">{notification.message}</p>
-                                        <p className="text-xs text-muted-foreground">{notification.time}</p>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </CardContent>
+                    <CardHeader><CardTitle className="flex items-center gap-2"><Bell size={20} /> Recent Notifications</CardTitle></CardHeader>
+                    <CardContent><p className="text-center text-muted-foreground py-4">No new notifications.</p></CardContent>
                 </Card>
 
-                {/* Latest Sessions */}
                 <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <Calendar size={20} />
-                            Latest Sessions
-                        </CardTitle>
-                    </CardHeader>
+                    <CardHeader><CardTitle className="flex items-center gap-2"><Calendar size={20} /> Latest Sessions</CardTitle></CardHeader>
                     <CardContent>
                         <div className="space-y-3">
                             {recentSessions.length > 0 ? recentSessions.map(session => (
-                                <div key={session.id} className="flex justify-between items-center p-3 rounded-lg hover:bg-accent">
-                                    <div>
-                                        <p className="font-medium">{session.advisor_name}</p>
-                                        <p className="text-sm text-muted-foreground">{session.session_details.reasons.join(', ')}</p>
-                                    </div>
-                                    <div className="text-right">
-                                        <p className="text-sm">{format(session.session_date.toDate(), 'MMM dd')}</p>
-                                        <Badge variant="outline">{session.status}</Badge>
-                                    </div>
-                                </div>
+                                <SessionCard key={session.id} session={session} />
                             )) : (
                                 <p className="text-center text-muted-foreground py-4">No upcoming sessions</p>
                             )}
@@ -427,209 +441,67 @@ const StudentDashboard = () => {
   }
   
   function SessionCard({ session }: { session: Session }) { 
-    return <Card><CardContent className="p-4 flex justify-between items-center"><div><p className="font-semibold">{session.advisor_name}</p><p className="text-sm text-muted-foreground">{session.session_details.reasons.join(', ')}</p></div><div><p>{format(session.session_date.toDate(), 'PPP, p')}</p><Badge>{session.status}</Badge></div></CardContent></Card>
+    const { session_details, advisor_name, session_date, status } = session;
+    const isGroup = session_details.sessionType === 'group';
+    const displayReasons = session_details.reasons.map(r => r === 'Other' ? session_details.otherReason || 'Other' : r).join(', ');
+
+    return (
+        <Card>
+            <CardContent className="p-4 flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+                <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-1">
+                        <p className="font-semibold">{advisor_name}</p>
+                        {isGroup && <Badge variant="secondary" className="flex items-center gap-1"><Users size={12}/> Group</Badge>}
+                    </div>
+                    <p className="text-sm text-muted-foreground truncate" title={displayReasons}>{displayReasons}</p>
+                </div>
+                <div className="text-left sm:text-right flex-shrink-0">
+                    <p className="font-medium">{format(session_date.toDate(), 'PPP, p')}</p>
+                    <Badge>{status}</Badge>
+                </div>
+            </CardContent>
+        </Card>
+    );
   }
 
   function AnalyticsSection() {
-    const timelineData = sessions.slice(0, 5).map((session, index) => ({
-      date: format(session.session_date.toDate(), 'MMM dd, yyyy'),
-      event: `Session with ${session.advisor_name}`,
-      type: session.session_details.reasons[0] || 'General',
-      status: session.status
-    }));
-
-    const aiInsights = [
-      "You've had consistent academic advising sessions, showing great commitment to your academic journey.",
-      "Consider scheduling more career guidance sessions to complement your academic progress.",
-      "Your session frequency suggests strong engagement with academic support services."
-    ];
-
     return <>
         <h1 className="text-3xl font-bold mb-8">My Academic Journey</h1>
-        <div className="space-y-8">
-                     {/* First Charts Row */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2">
-                                    <BarChart2 size={20} />
-                                    Session Topics Breakdown
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <ResponsiveContainer width="100%" height={300}>
-                                    <PieChart>
-                                        <Pie data={sessionReasonData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} label>
-                                            {sessionReasonData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
-                                        </Pie>
-                                        <Tooltip/>
-                                    </PieChart>
-                                </ResponsiveContainer>
-                            </CardContent>
-                        </Card>
-                        
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2">
-                                    <TrendingUp size={20} />
-                                    Sessions Per Month
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <ResponsiveContainer width="100%" height={300}>
-                                    <BarChart data={sessionsPerMonth}>
-                                        <CartesianGrid strokeDasharray="3 3" />
-                                        <XAxis dataKey="name"/>
-                                        <YAxis/>
-                                        <Tooltip/>
-                                        <Bar dataKey="sessions" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                                    </BarChart>
-                                </ResponsiveContainer>
-                            </CardContent>
-                        </Card>
-                    </div>
-
-                    {/* Second Charts Row */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2">
-                                    <BarChart2 size={20} />
-                                    Session Status Distribution
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <ResponsiveContainer width="100%" height={300}>
-                                    <PieChart>
-                                        <Pie data={sessionStatusData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} label>
-                                            {sessionStatusData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
-                                        </Pie>
-                                        <Tooltip/>
-                                    </PieChart>
-                                </ResponsiveContainer>
-                            </CardContent>
-                        </Card>
-                        
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2">
-                                    <TrendingUp size={20} />
-                                    Weekly Session Activity
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <ResponsiveContainer width="100%" height={300}>
-                                    <LineChart data={sessionsPerWeek}>
-                                        <CartesianGrid strokeDasharray="3 3" />
-                                        <XAxis dataKey="name"/>
-                                        <YAxis/>
-                                        <Tooltip/>
-                                        <Line type="monotone" dataKey="sessions" stroke="hsl(var(--primary))" strokeWidth={3} dot={{ fill: 'hsl(var(--primary))' }} />
-                                    </LineChart>
-                                </ResponsiveContainer>
-                            </CardContent>
-                        </Card>
-                    </div>
-
-                    {/* Third Charts Row */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2">
-                                    <Target size={20} />
-                                    Session Performance Metrics
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <ResponsiveContainer width="100%" height={300}>
-                                    <BarChart data={performanceData}>
-                                        <CartesianGrid strokeDasharray="3 3" />
-                                        <XAxis dataKey="session"/>
-                                        <YAxis/>
-                                        <Tooltip/>
-                                        <Bar dataKey="satisfaction" fill="#10b981" name="Satisfaction (1-5)" radius={[4, 4, 0, 0]} />
-                                        <Bar dataKey="progress" fill="#0ea5e9" name="Progress %" radius={[4, 4, 0, 0]} />
-                                    </BarChart>
-                                </ResponsiveContainer>
-                            </CardContent>
-                        </Card>
-                        
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2">
-                                    <BarChart2 size={20} />
-                                    Advisor Interaction Frequency
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <ResponsiveContainer width="100%" height={300}>
-                                    <BarChart data={sessions.slice(0, 5).map(s => ({ name: s.advisor_name.split(' ')[0], sessions: Math.floor(Math.random() * 8) + 1 }))}>
-                                        <CartesianGrid strokeDasharray="3 3" />
-                                        <XAxis dataKey="name"/>
-                                        <YAxis/>
-                                        <Tooltip/>
-                                        <Bar dataKey="sessions" fill="hsl(var(--accent-foreground))" radius={[4, 4, 0, 0]} />
-                                    </BarChart>
-                                </ResponsiveContainer>
-                            </CardContent>
-                        </Card>
-                    </div>
-
-                    {/* Timeline and AI Insights Row */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2">
-                                    <Calendar size={20} />
-                                    Your Advising Timeline
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="space-y-4">
-                                    {timelineData.map((item, index) => (
-                                        <div key={index} className="flex items-start gap-4 pb-4 border-b last:border-b-0">
-                                            <div className="w-3 h-3 rounded-full bg-primary mt-2 flex-shrink-0" />
-                                            <div className="flex-1">
-                                                <p className="font-medium">{item.event}</p>
-                                                <p className="text-sm text-muted-foreground">{item.type}</p>
-                                                <p className="text-xs text-muted-foreground">{item.date}</p>
-                                                <Badge variant="outline" className="mt-1">{item.status}</Badge>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </CardContent>
-                        </Card>
-
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2">
-                                    <Lightbulb size={20} />
-                                    AI Actionable Insights
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="space-y-4">
-                                    {aiInsights.map((insight, index) => (
-                                        <div key={index} className="flex items-start gap-3 p-3 rounded-lg bg-accent/50">
-                                            <Target size={16} className="text-primary mt-0.5 flex-shrink-0" />
-                                            <p className="text-sm">{insight}</p>
-                                        </div>
-                                    ))}
-                                    {sessions.length === 0 && (
-                                        <p className="text-center text-muted-foreground py-4">
-                                            Complete more sessions to receive personalized insights.
-                                        </p>
-                                    )}
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </div>
-                </div>
-        
-        {/* Show message if no sessions */}
-        {sessions.length === 0 && (
+        {sessions.length === 0 ? (
             <Card><CardContent className="text-center text-muted-foreground py-16">No data to display analytics. Complete a session to see your journey.</CardContent></Card>
+        ) : (
+            <div className="space-y-8">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <Card>
+                        <CardHeader><CardTitle className="flex items-center gap-2"><BarChart2 size={20} /> Session Topics Breakdown</CardTitle></CardHeader>
+                        <CardContent>
+                            <ResponsiveContainer width="100%" height={300}>
+                                <PieChart>
+                                    <Pie data={sessionReasonData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} label>
+                                        {sessionReasonData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
+                                    </Pie>
+                                    <Tooltip/>
+                                </PieChart>
+                            </ResponsiveContainer>
+                        </CardContent>
+                    </Card>
+                    
+                    <Card>
+                        <CardHeader><CardTitle className="flex items-center gap-2"><TrendingUp size={20} /> Sessions Per Month</CardTitle></CardHeader>
+                        <CardContent>
+                            <ResponsiveContainer width="100%" height={300}>
+                                <BarChart data={sessionsPerMonth}>
+                                    <CartesianGrid strokeDasharray="3 3" />
+                                    <XAxis dataKey="name"/>
+                                    <YAxis/>
+                                    <Tooltip/>
+                                    <Bar dataKey="sessions" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </CardContent>
+                    </Card>
+                </div>
+            </div>
         )}
     </>;
   }
@@ -651,11 +523,11 @@ const StudentDashboard = () => {
          <h1 className="text-3xl font-bold mb-8">My Advisor</h1>
          <Card>
            <CardHeader>
-             <CardTitle>{primaryAdvisor.fullName}</CardTitle>
+             <CardTitle>{primaryAdvisor.name}</CardTitle>
            </CardHeader>
            <CardContent>
-             <p><strong>Email:</strong> {primaryAdvisor.email}</p>
-             <p><strong>Office:</strong> {primaryAdvisor.office || 'TBA'}</p>
+             <p><strong>Email:</strong> {advisors.find(a => a.id === primaryAdvisor.id)?.email || 'N/A'}</p>
+             <p><strong>Office:</strong> {primaryAdvisor.room_number}</p>
            </CardContent>
          </Card>
        </>
@@ -733,116 +605,14 @@ const StudentDashboard = () => {
   }
 
   function SettingsSection() {
-    const [emailReminders, setEmailReminders] = useState(true);
-    const [pushNotifications, setPushNotifications] = useState(false);
-    const [autoConfirmSessions, setAutoConfirmSessions] = useState(false);
-    const [selectedLanguage, setSelectedLanguage] = useState('English');
-
     return (
       <>
         <h1 className="text-3xl font-bold mb-8">Settings</h1>
-        <div className="grid gap-6 md:grid-cols-2">
-            <Card>
-                <CardHeader><CardTitle>Appearance</CardTitle></CardHeader>
-                <CardContent className="space-y-4">
-                    <div>
-                        <p className="text-sm mb-2 text-muted-foreground">Theme</p>
-                        <div className="flex gap-2">
-                            <Button variant="default">Light</Button>
-                            <Button variant="outline">Dark</Button>
-                            <Button variant="outline">System</Button>
-                        </div>
-                    </div>
-                    <div>
-                        <p className="text-sm mb-2 text-muted-foreground">Language</p>
-                        <select 
-                          value={selectedLanguage} 
-                          onChange={(e) => setSelectedLanguage(e.target.value)}
-                          className="w-full p-2 border rounded-md bg-background"
-                        >
-                            <option value="English">English</option>
-                            <option value="Afrikaans">Afrikaans</option>
-                            <option value="Zulu">Zulu</option>
-                        </select>
-                    </div>
-                </CardContent>
-            </Card>
-            
-            <Card>
-                <CardHeader><CardTitle>Notification Preferences</CardTitle></CardHeader>
-                <CardContent className="space-y-4">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <label className="font-medium">Email Reminders</label>
-                            <p className="text-sm text-muted-foreground">Get session reminders via email</p>
-                        </div>
-                        <Button 
-                          variant={emailReminders ? "default" : "outline"} 
-                          size="sm"
-                          onClick={() => setEmailReminders(!emailReminders)}
-                        >
-                          {emailReminders ? 'On' : 'Off'}
-                        </Button>
-                    </div>
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <label className="font-medium">Push Notifications</label>
-                            <p className="text-sm text-muted-foreground">Receive browser notifications</p>
-                        </div>
-                        <Button 
-                          variant={pushNotifications ? "default" : "outline"} 
-                          size="sm"
-                          onClick={() => setPushNotifications(!pushNotifications)}
-                        >
-                          {pushNotifications ? 'On' : 'Off'}
-                        </Button>
-                    </div>
-                </CardContent>
-            </Card>
-
-            <Card>
-                <CardHeader><CardTitle>Session Preferences</CardTitle></CardHeader>
-                <CardContent className="space-y-4">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <label className="font-medium">Auto-confirm Sessions</label>
-                            <p className="text-sm text-muted-foreground">Automatically confirm session bookings</p>
-                        </div>
-                        <Button 
-                          variant={autoConfirmSessions ? "default" : "outline"} 
-                          size="sm"
-                          onClick={() => setAutoConfirmSessions(!autoConfirmSessions)}
-                        >
-                          {autoConfirmSessions ? 'On' : 'Off'}
-                        </Button>
-                    </div>
-                    <div>
-                        <label className="text-sm font-medium text-muted-foreground">Default Session Duration</label>
-                        <select className="w-full p-2 border rounded-md bg-background mt-1">
-                            <option value="30">30 minutes</option>
-                            <option value="45">45 minutes</option>
-                            <option value="60">60 minutes</option>
-                        </select>
-                    </div>
-                </CardContent>
-            </Card>
-
-            <Card>
-                <CardHeader><CardTitle>Privacy & Data</CardTitle></CardHeader>
-                <CardContent className="space-y-4">
-                    <Button variant="outline" className="w-full">
-                        <Download size={16} className="mr-2" />
-                        Export My Data
-                    </Button>
-                    <Button variant="outline" className="w-full">
-                        Delete Account
-                    </Button>
-                    <p className="text-xs text-muted-foreground">
-                        Account deletion is permanent and cannot be undone.
-                    </p>
-                </CardContent>
-            </Card>
-        </div>
+        <Card>
+            <CardContent className="p-6 text-center text-muted-foreground">
+                Settings page coming soon.
+            </CardContent>
+        </Card>
       </>
     );
   }
