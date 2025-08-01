@@ -265,19 +265,21 @@ const BookSessionDialog = ({
                       <div className="flex justify-between items-center">
                         <h4 className="font-medium">Student {index + 1}</h4>
                       </div>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                        <Input
-                          placeholder="First Name"
-                          value={member.name}
-                          maxLength={40}
-                          onChange={(e) => updateGroupMember(index, 'name', e.target.value)}
-                        />
-                        <Input
-                          placeholder="Last Name"
-                          value={member.surname}
-                          maxLength={40}
-                          onChange={(e) => updateGroupMember(index, 'surname', e.target.value)}
-                        />
+                      <div className="space-y-3">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <Input
+                            placeholder="First Name"
+                            value={member.name}
+                            maxLength={40}
+                            onChange={(e) => updateGroupMember(index, 'name', e.target.value)}
+                          />
+                          <Input
+                            placeholder="Last Name"
+                            value={member.surname}
+                            maxLength={40}
+                            onChange={(e) => updateGroupMember(index, 'surname', e.target.value)}
+                          />
+                        </div>
                         <Input
                           placeholder="Email (@edu.vut.ac.za)"
                           value={member.email}
