@@ -63,18 +63,10 @@ const StudentDashboard = () => {
   const [userProfile, setUserProfileState] = useState({
       name: '',
       email: '',
-      avatar: ''
+      avatar: '',
+      course: '',
+      faculty: ''
   });
-
-  useEffect(() => {
-    if (user) {
-        setUserProfileState({
-            name: `${user.Name} ${user.Surname}`,
-            email: user.email,
-            avatar: `https://placehold.co/100x100/0ea5e9/ffffff?text=${user.Name.charAt(0)}`
-        });
-    }
-  }, [user]);
 
   // Fetch real data from Firestore
   useEffect(() => {
@@ -85,16 +77,27 @@ const StudentDashboard = () => {
 
     setLoading(true);
     
-    // Fetch user-specific data (including primary advisor ID)
+    // Fetch user-specific data (including primary advisor ID, course, and faculty)
     const userDocRef = doc(db, "users", user.uuid);
     const unsubscribeUser = onSnapshot(userDocRef, (userDoc) => {
-        if (userDoc.exists() && userDoc.data().primaryAdvisorId) {
-            const advisorDocRef = doc(db, "users", userDoc.data().primaryAdvisorId);
-            getDoc(advisorDocRef).then(advisorDoc => {
-                if (advisorDoc.exists()) {
-                    setPrimaryAdvisor({ id: advisorDoc.id, ...advisorDoc.data() });
-                }
+        if (userDoc.exists()) {
+            const userData = userDoc.data();
+            setUserProfileState({
+                name: `${userData.Name || ''} ${userData.Surname || ''}`,
+                email: userData.email || '',
+                avatar: `https://placehold.co/100x100/0ea5e9/ffffff?text=${(userData.Name || 'U').charAt(0)}`,
+                course: userData.course || 'Course not set',
+                faculty: userData.faculty || 'Faculty not set'
             });
+
+            if (userData.primaryAdvisorId) {
+                const advisorDocRef = doc(db, "users", userData.primaryAdvisorId);
+                getDoc(advisorDocRef).then(advisorDoc => {
+                    if (advisorDoc.exists()) {
+                        setPrimaryAdvisor({ id: advisorDoc.id, ...advisorDoc.data() });
+                    }
+                });
+            }
         }
     });
 
@@ -248,10 +251,10 @@ const StudentDashboard = () => {
             <div className="flex items-center justify-between mb-8">
                 {isSidebarOpen && (
                     <div 
-                        className="flex items-center gap-3 p-1 rounded-lg hover:bg-accent transition-colors duration-200 cursor-pointer"
+                        className="flex items-center gap-3 p-1 rounded-lg hover:bg-accent transition-colors duration-200 cursor-pointer w-full"
                         onClick={() => setShowProfileModal(true)}
                     >
-                        <div className="relative group">
+                        <div className="relative group flex-shrink-0">
                             <img 
                                 src={userProfile.avatar} 
                                 alt="User Avatar" 
@@ -261,7 +264,11 @@ const StudentDashboard = () => {
                                 <User size={16} className="text-white"/>
                             </div>
                         </div>
-                        <span className="text-lg font-semibold">{userProfile.name}</span>
+                        <div className="overflow-hidden">
+                            <p className="text-md font-semibold truncate">{userProfile.name}</p>
+                            <p className="text-xs text-muted-foreground truncate">{userProfile.course}</p>
+                            <p className="text-xs text-muted-foreground truncate">{userProfile.faculty}</p>
+                        </div>
                     </div>
                 )}
                 <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="p-2 rounded-full hover:bg-accent"><ChevronLeft size={20} /></button>

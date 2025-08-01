@@ -125,6 +125,7 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
               <Input
                 id="course"
                 value={user.course}
+                disabled
                 onChange={(e) => setProfileData(prev => ({ ...prev, course: e.target.value }))}
               />
             </div>
@@ -137,6 +138,7 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
               <Input
                 id="faculty"
                 value={user.faculty}
+                disabled
                 onChange={(e) => setProfileData(prev => ({ ...prev, faculty: e.target.value }))}
               />
             </div>
