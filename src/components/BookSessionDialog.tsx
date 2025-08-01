@@ -7,9 +7,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Calendar, Plus, Eye } from 'lucide-react';
-import { addDays, format, isWeekend, startOfDay } from 'date-fns';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Calendar, Plus, XCircle, Eye } from 'lucide-react';
+import { format, isWeekend, startOfDay } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
@@ -27,18 +27,17 @@ interface BookSessionDialogProps {
   bookedSlots: string[];
 }
 
-const BookSessionDialog = ({
-  open,
-  onOpenChange,
-  onBookSession,
-  advisors,
-  bookedSlots
+const BookSessionDialog = ({ 
+  open, 
+  onOpenChange, 
+  onBookSession, 
+  advisors, 
+  bookedSlots 
 }: BookSessionDialogProps) => {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [selectedTime, setSelectedTime] = useState('');
   const [sessionType, setSessionType] = useState('individual');
-  const [selectedReasons, setSelectedReasons] = useState<string[]>([]);
-  const [otherReasonText, setOtherReasonText] = useState('');
+  const [selectedReason, setSelectedReason] = useState('');
   const [mode, setMode] = useState('in-person');
   const [numberOfStudents, setNumberOfStudents] = useState(1);
   const [groupMembers, setGroupMembers] = useState<GroupMember[]>([
@@ -48,17 +47,25 @@ const BookSessionDialog = ({
   const [showPreview, setShowPreview] = useState(false);
 
   const reasonOptions = [
-    'Academic Advising',
-    'Career Guidance',
-    'Course Selection',
-    'Time Management',
-    'Graduation Requirements',
-    'Financial Aid',
-    'Study Abroad',
-    'Internship Guidance',
-    'Research Opportunities',
+    'Academic Advising', 
+    'Career Guidance', 
+    'Course Selection', 
+    'Time Management', 
+    'Graduation Requirements', 
+    'Financial Aid', 
+    'Study Abroad', 
+    'Internship Guidance', 
+    'Research Opportunities', 
+    'Academic Planning (change course/major)',
+    'Academic Performance',
+    'Career Development',
+    'First-Year Transition Support'
+    'Financial Literacy & Support',
+    'Learning/Study strategies',
+    'Goal Setting & Time management',
+    'Revision Planning & Exam preparation',
+    'Personal Development & Wellneess',
     'Other'
-    // You can add more reasons here
   ];
 
   const timeSlots = [
@@ -66,27 +73,18 @@ const BookSessionDialog = ({
     '12:00 - 13:00', '13:00 - 14:00', '14:00 - 15:00', '15:00 - 16:00', '16:00 - 17:00'
   ];
 
-  const handleReasonSelect = (reason: string) => {
-    setSelectedReasons(prev => {
-      const isSelected = prev.includes(reason);
-      if (isSelected) {
-        if (reason === 'Other') {
-          setOtherReasonText('');
-        }
-        return prev.filter(r => r !== reason);
-      } else {
-        if (prev.length < 4) {
-          return [...prev, reason];
-        } else {
-          toast.error('You can select a maximum of 4 reasons.');
-          return prev;
-        }
-      }
-    });
-  };
-
   const validateGroupMemberEmail = (email: string) => {
     return email.endsWith('@edu.vut.ac.za');
+  };
+
+  const handleAddGroupMember = () => {
+    if (groupMembers.length < 5) {
+      setGroupMembers([...groupMembers, { name: '', surname: '', email: '' }]);
+    }
+  };
+
+  const handleRemoveGroupMember = (index: number) => {
+    setGroupMembers(groupMembers.filter((_, i) => i !== index));
   };
 
   const updateGroupMember = (index: number, field: keyof GroupMember, value: string) => {
@@ -96,37 +94,32 @@ const BookSessionDialog = ({
   };
 
   const validateForm = () => {
-    if (!selectedDate || !selectedTime || selectedReasons.length === 0) {
-      toast.error('Please fill in all required fields.');
+    if (!selectedDate || !selectedTime || !selectedReason) {
+      toast.error('Please fill in all required fields');
       return false;
     }
 
-    if (selectedReasons.includes('Other') && otherReasonText.trim() === '') {
-        toast.error('Please specify the reason when "Other" is selected.');
-        return false;
-    }
-
     if (sessionType === 'group') {
-      const validMembers = groupMembers.filter(member =>
+      const validMembers = groupMembers.filter(member => 
         member.name && member.surname && member.email
       );
-
+      
       if (validMembers.length === 0) {
-        toast.error('Please add at least one group member.');
+        toast.error('Please add at least one group member');
         return false;
       }
-
-      const invalidEmails = validMembers.filter(member =>
+      
+      const invalidEmails = validMembers.filter(member => 
         !validateGroupMemberEmail(member.email)
       );
-
+      
       if (invalidEmails.length > 0) {
         toast.error('All group member emails must end with @edu.vut.ac.za');
         return false;
       }
-
+      
       if (validMembers.length > 5) {
-        toast.error('Group sessions are limited to 5 members.');
+        toast.error('Group sessions are limited to 5 members');
         return false;
       }
     }
@@ -145,13 +138,12 @@ const BookSessionDialog = ({
       sessionType,
       selectedDate,
       selectedTime,
-      selectedReasons,
-      otherReasonText: selectedReasons.includes('Other') ? otherReasonText : undefined,
+      selectedReason,
       mode,
       groupMembers: sessionType === 'group' ? groupMembers.filter(m => m.name && m.surname && m.email) : undefined,
       comments
     };
-
+    
     onBookSession(sessionData);
     resetForm();
     setShowPreview(false);
@@ -162,16 +154,12 @@ const BookSessionDialog = ({
     setSelectedDate(undefined);
     setSelectedTime('');
     setSessionType('individual');
-    setSelectedReasons([]);
-    setOtherReasonText('');
+    setSelectedReason('');
     setMode('in-person');
     setNumberOfStudents(1);
     setGroupMembers([{ name: '', surname: '', email: '' }]);
     setComments('');
   };
-
-  const today = startOfDay(new Date());
-  const maxDate = addDays(today, 9);
 
   return (
     <>
@@ -183,7 +171,7 @@ const BookSessionDialog = ({
               Book New Session
             </DialogTitle>
           </DialogHeader>
-
+          
           <div className="space-y-6">
             {/* Session Type */}
             <div>
@@ -205,17 +193,20 @@ const BookSessionDialog = ({
                 <Label htmlFor="num-students" className="mb-2 block font-medium">
                   Number of Students (Maximum 5) *
                 </Label>
-                <Select
-                  value={numberOfStudents.toString()}
+                <Select 
+                  value={numberOfStudents.toString()} 
                   onValueChange={(value) => {
                     const num = parseInt(value);
                     setNumberOfStudents(num);
+                    // Adjust group members array
                     const currentMembers = [...groupMembers];
                     if (num > currentMembers.length) {
+                      // Add more members
                       for (let i = currentMembers.length; i < num; i++) {
                         currentMembers.push({ name: '', surname: '', email: '' });
                       }
                     } else if (num < currentMembers.length) {
+                      // Remove excess members
                       currentMembers.splice(num);
                     }
                     setGroupMembers(currentMembers);
@@ -242,7 +233,9 @@ const BookSessionDialog = ({
                 <div className="space-y-3">
                   {groupMembers.map((member, index) => (
                     <div key={index} className="border rounded-lg p-4 space-y-3">
-                      <h4 className="font-medium">Student {index + 1}</h4>
+                      <div className="flex justify-between items-center">
+                        <h4 className="font-medium">Student {index + 1}</h4>
+                      </div>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                         <Input
                           placeholder="First Name"
@@ -288,7 +281,7 @@ const BookSessionDialog = ({
                     selected={selectedDate}
                     onSelect={setSelectedDate}
                     disabled={(date) =>
-                      isWeekend(date) || startOfDay(date) < today || startOfDay(date) > maxDate
+                      isWeekend(date) || startOfDay(date) < startOfDay(new Date())
                     }
                     initialFocus
                     className={cn("p-3 pointer-events-auto")}
@@ -299,73 +292,21 @@ const BookSessionDialog = ({
 
             {/* Reason for Session */}
             <div>
-                <Label className="mb-2 block font-medium">Reason for Session (Max 4) *</Label>
-                <Popover>
-                    <PopoverTrigger asChild>
-                        <Button
-                            variant="outline"
-                            role="combobox"
-                            className="w-full justify-start h-auto min-h-[2.5rem]"
-                        >
-                            {selectedReasons.length > 0 ? (
-                                <div className="flex gap-1 flex-wrap">
-                                    {selectedReasons.map(reason => (
-                                        <span key={reason} className="px-2 py-1 bg-secondary text-secondary-foreground rounded-md text-xs font-semibold">
-                                            {reason}
-                                        </span>
-                                    ))}
-                                </div>
-                            ) : (
-                                <span className="text-muted-foreground">Select up to 4 reasons</span>
-                            )}
-                        </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                        {/* MODIFICATION HERE: Added max-height and overflow-y-auto for scrollbar */}
-                        <div className="p-2 space-y-1 max-h-[250px] overflow-y-auto">
-                            {reasonOptions.map(reason => {
-                                const isSelected = selectedReasons.includes(reason);
-                                const isDisabled = !isSelected && selectedReasons.length >= 4;
-                                return (
-                                    <div
-                                        key={reason}
-                                        onClick={() => !isDisabled && handleReasonSelect(reason)}
-                                        className={cn(
-                                            "flex items-center space-x-3 p-2 rounded-md",
-                                            isDisabled ? "text-muted-foreground opacity-50 cursor-not-allowed" : "cursor-pointer hover:bg-accent",
-                                        )}
-                                    >
-                                        <input
-                                            type="checkbox"
-                                            readOnly
-                                            checked={isSelected}
-                                            className={cn("h-4 w-4", isDisabled ? "cursor-not-allowed" : "cursor-pointer")}
-                                        />
-                                        <Label className={cn("font-normal", isDisabled ? "cursor-not-allowed" : "cursor-pointer")}>
-                                            {reason}
-                                        </Label>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </PopoverContent>
-                </Popover>
-                {selectedReasons.includes('Other') && (
-                    <div className="mt-4">
-                        <Label htmlFor="other-reason" className="mb-2 block font-medium">
-                            Please specify the other reason *
-                        </Label>
-                        <Textarea
-                            id="other-reason"
-                            placeholder="Specify your reason"
-                            value={otherReasonText}
-                            onChange={(e) => setOtherReasonText(e.target.value)}
-                            required
-                        />
-                    </div>
-                )}
+              <Label htmlFor="reason-select" className="mb-2 block font-medium">Reason for Session *</Label>
+              <Select value={selectedReason} onValueChange={setSelectedReason}>
+                <SelectTrigger id="reason-select" className="w-full">
+                  <SelectValue placeholder="Select reason for session" />
+                </SelectTrigger>
+                <SelectContent>
+                  {reasonOptions.map(reason => (
+                    <SelectItem key={reason} value={reason}>
+                      {reason}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-            
+
             {/* Time Slot */}
             <div>
               <Label htmlFor="time-select" className="mb-2 block font-medium">Time Slot *</Label>
@@ -428,39 +369,24 @@ const BookSessionDialog = ({
           <AlertDialogHeader>
             <AlertDialogTitle>Preview Session Booking</AlertDialogTitle>
             <AlertDialogDescription asChild>
-              <div className="space-y-4 text-sm pt-2">
+              <div className="space-y-3 text-sm">
                 <div><strong>Session Type:</strong> {sessionType === 'individual' ? 'Individual Session' : 'Group Session'}</div>
                 <div><strong>Date:</strong> {selectedDate ? format(selectedDate, 'PPP') : 'Not selected'}</div>
                 <div><strong>Time:</strong> {selectedTime || 'Not selected'}</div>
-                <div>
-                  <strong>Reason(s):</strong>
-                  {selectedReasons.length > 0 ? (
-                      <ul className="list-disc list-inside ml-4 mt-1">
-                          {selectedReasons.map(reason => (
-                              <li key={reason}>
-                                  {reason === 'Other' && otherReasonText 
-                                      ? `Other: ${otherReasonText}` 
-                                      : reason}
-                              </li>
-                          ))}
-                      </ul>
-                  ) : (
-                      <span> Not selected</span>
-                  )}
-                </div>
+                <div><strong>Reason:</strong> {selectedReason || 'Not selected'}</div>
                 <div><strong>Mode:</strong> {mode === 'in-person' ? 'In-person' : 'Online'}</div>
-
+                
                 {sessionType === 'group' && (
                   <div>
                     <strong>Group Members:</strong>
-                    <ul className="ml-4 mt-1 list-disc list-inside">
+                    <ul className="ml-4 mt-1">
                       {groupMembers.filter(m => m.name && m.surname && m.email).map((member, index) => (
-                        <li key={index}>{member.name} {member.surname} ({member.email})</li>
+                        <li key={index}>• {member.name} {member.surname} ({member.email})</li>
                       ))}
                     </ul>
                   </div>
                 )}
-
+                
                 {comments && (
                   <div><strong>Comments:</strong> {comments}</div>
                 )}
