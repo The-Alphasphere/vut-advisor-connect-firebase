@@ -124,7 +124,7 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
               </Label>
               <Input
                 id="course"
-                value={profileData.course}
+                value={user.course}
                 onChange={(e) => setProfileData(prev => ({ ...prev, course: e.target.value }))}
               />
             </div>
@@ -136,7 +136,7 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
               </Label>
               <Input
                 id="faculty"
-                value={profileData.faculty}
+                value={user.faculty}
                 onChange={(e) => setProfileData(prev => ({ ...prev, faculty: e.target.value }))}
               />
             </div>
