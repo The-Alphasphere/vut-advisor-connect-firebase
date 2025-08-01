@@ -46,6 +46,7 @@ const BookSessionDialog = ({
     { name: '', surname: '', email: '' }
   ]);
   const [comments, setComments] = useState('');
+  const [selectedAdvisor, setSelectedAdvisor] = useState('');
   const [showPreview, setShowPreview] = useState(false);
 
   const reasonOptions = [
@@ -116,7 +117,7 @@ const BookSessionDialog = ({
   };
 
   const validateForm = () => {
-    if (!selectedDate || !selectedTime || selectedReasons.length === 0) {
+    if (!selectedDate || !selectedTime || selectedReasons.length === 0 || !selectedAdvisor) {
       toast.error('Please fill in all required fields');
       return false;
     }
@@ -188,6 +189,7 @@ const BookSessionDialog = ({
     setNumberOfStudents(1);
     setGroupMembers([{ name: '', surname: '', email: '' }]);
     setComments('');
+    setSelectedAdvisor('');
   };
 
   return (
@@ -270,16 +272,19 @@ const BookSessionDialog = ({
                           placeholder="First Name"
                           value={member.name}
                           onChange={(e) => updateGroupMember(index, 'name', e.target.value)}
+                          maxLength={40}
                         />
                         <Input
                           placeholder="Last Name"
                           value={member.surname}
                           onChange={(e) => updateGroupMember(index, 'surname', e.target.value)}
+                          maxLength={40}
                         />
                         <Input
                           placeholder="Email (@edu.vut.ac.za)"
                           value={member.email}
                           onChange={(e) => updateGroupMember(index, 'email', e.target.value)}
+                          maxLength={30}
                         />
                       </div>
                     </div>
@@ -410,6 +415,23 @@ const BookSessionDialog = ({
               </Select>
             </div>
 
+            {/* Advisor Selection */}
+            <div>
+              <Label htmlFor="advisor-select" className="mb-2 block font-medium">Select Advisor *</Label>
+              <Select value={selectedAdvisor} onValueChange={setSelectedAdvisor}>
+                <SelectTrigger id="advisor-select" className="w-full">
+                  <SelectValue placeholder="Choose an advisor" />
+                </SelectTrigger>
+                <SelectContent>
+                  {advisors.map(advisor => (
+                    <SelectItem key={advisor.id} value={advisor.id}>
+                      {advisor.name} - {advisor.department}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             {/* Mode */}
             <div>
               <Label htmlFor="mode-select" className="mb-2 block font-medium">Session Mode *</Label>
@@ -468,6 +490,14 @@ const BookSessionDialog = ({
                   )}
                 </div>
                 <div><strong>Mode:</strong> {mode === 'in-person' ? 'In-person' : 'Online'}</div>
+                
+                {selectedAdvisor && (
+                  <div>
+                    <strong>Advisor:</strong> {advisors.find(a => a.id === selectedAdvisor)?.name || 'Not found'}
+                    <br />
+                    <strong>Room:</strong> {advisors.find(a => a.id === selectedAdvisor)?.room || 'Not assigned'}
+                  </div>
+                )}
                 
                 {sessionType === 'group' && (
                   <div>
