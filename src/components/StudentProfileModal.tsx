@@ -16,7 +16,7 @@ interface StudentProfileModalProps {
     email: string;
     avatar: string;
     course: string;
-    faculty : string;
+    faculty: string;
   };
   onAvatarChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
 }
@@ -117,29 +117,29 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
 
             <div>
                 <Label htmlFor="course" className="flex items-center gap-2">
-                  <User size={16} />
-                  Course
+                    <GraduationCap size={16} />
+                    Course
                 </Label>
                 <Input
-                  id="course"
-                  value={user.course}
-                  disabled
-                  className="bg-muted"
+                    id="course"
+                    value={userProfile.course}
+                    disabled
+                    className="bg-muted"
                 />
             </div>
 
             <div>
                 <Label htmlFor="faculty" className="flex items-center gap-2">
-                  <User size={16} />
-                  Faculty
+                    <Building2 size={16} />
+                    Faculty
                 </Label>
                 <Input
-                  id="faculty"
-                  value={user.faculty}
-                  disabled
-                  className="bg-muted"
+                    id="faculty"
+                    value={userProfile.faculty}
+                    disabled
+                    className="bg-muted"
                 />
-              </div>
+            </div>
           </div>
 
           {/* Action Buttons */}
