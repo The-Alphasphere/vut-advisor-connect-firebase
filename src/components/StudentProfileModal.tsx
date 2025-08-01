@@ -126,7 +126,6 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
                   disabled
                   className="bg-muted"
                 />
-              </div>
             </div>
 
             <div>
@@ -141,7 +140,6 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
                   className="bg-muted"
                 />
               </div>
-            </div>
           </div>
 
           {/* Action Buttons */}
