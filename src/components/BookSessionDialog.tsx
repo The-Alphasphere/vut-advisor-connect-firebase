@@ -59,12 +59,12 @@ const BookSessionDialog = ({
     'Academic Planning (change course/major)',
     'Academic Performance',
     'Career Development',
-    'First-Year Transition Support'
+    'First-Year Transition Support',
     'Financial Literacy & Support',
     'Learning/Study strategies',
     'Goal Setting & Time management',
     'Revision Planning & Exam preparation',
-    'Personal Development & Wellneess',
+    'Personal Development & Wellness',
     'Other'
   ];
 
