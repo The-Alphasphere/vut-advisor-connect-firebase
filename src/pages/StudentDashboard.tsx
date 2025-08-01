@@ -312,7 +312,7 @@ const StudentDashboard = () => {
   
   function MainDashboardView() {
     const recentSessions = upcomingSessions.slice(0, 3);
-    const recentNotifications;
+    const recentNotifications = [];
     
     return (
         <>
@@ -647,7 +647,7 @@ const StudentDashboard = () => {
          <h1 className="text-3xl font-bold mb-8">My Advisor</h1>
          <Card>
            <CardHeader>
-             <CardTitle>{primaryAdvisor.name}</CardTitle>
+             <CardTitle>{primaryAdvisor.fullName}</CardTitle>
            </CardHeader>
            <CardContent>
              <p><strong>Email:</strong> {primaryAdvisor.email}</p>
