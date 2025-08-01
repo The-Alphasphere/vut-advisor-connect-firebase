@@ -57,6 +57,15 @@ const BookSessionDialog = ({
     'Study Abroad',
     'Internship Guidance',
     'Research Opportunities',
+    'Academic Planning (change course/major)',
+    'Academic Performance',
+    'Career Development',
+    'First-Year Transition Support',
+    'Financial Literacy & Support',
+    'Learning/Study strategies',
+    'Goal Setting & Time management',
+    'Revision Planning & Exam preparation',
+    'Personal Development & Wellness',
     'Other'
   ];
 
