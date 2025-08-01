@@ -16,6 +16,7 @@ import LogoutConfirmation from '@/components/LogoutConfirmation';
 import jsPDF from 'jspdf';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import FooterSmall from '@/components/FooterSmall';
+import Header from '@/components/Header';
 import StudentProfileModal from '@/components/StudentProfileModal';
 import { LineChart, Line } from 'recharts';
 
@@ -74,8 +75,8 @@ const StudentDashboard = () => {
             name: `${user.Name} ${user.Surname}`,
             email: user.email,
             avatar: `https://placehold.co/100x100/0ea5e9/ffffff?text=${user.Name.charAt(0)}`,
-            course: user.course,
-            faculty: user.faculty
+            course: '',
+            faculty: ''
         });
     }
   }, [user]);
@@ -219,13 +220,7 @@ const StudentDashboard = () => {
         <Sidebar />
         <div className={`flex-1 transition-all duration-300 ${isSidebarOpen ? 'ml-64' : 'ml-20'}`}>
             <main className="p-8">
-                {activeSection === 'dashboard' && <MainDashboardView />}
-                {activeSection === 'my-sessions' && <MySessionsSection />}
-                {activeSection === 'analytics' && <AnalyticsSection />}
-                {activeSection === 'my-advisor' && <MyAdvisorSection />}
-                {activeSection === 'resource-hub' && <ResourceHubSection />}
-                {activeSection === 'goal-tracker' && <GoalTrackerSection />}
-                {activeSection === 'notifications' && <NotificationsSection />}
+                {renderActiveSection()}
                 
             </main>
         </div>
@@ -244,6 +239,20 @@ const StudentDashboard = () => {
       />
     </div>
   );
+
+  function renderActiveSection() {
+    switch(activeSection) {
+      case 'dashboard': return <MainDashboardView />;
+      case 'my-sessions': return <MySessionsSection />;
+      case 'analytics': return <AnalyticsSection />;
+      case 'my-advisor': return <MyAdvisorSection />;
+      case 'resource-hub': return <ResourceHubSection />;
+      case 'goal-tracker': return <GoalTrackerSection />;
+      case 'notifications': return <NotificationsSection />;
+      case 'settings': return <SettingsSection />;
+      default: return <MainDashboardView />;
+    }
+  }
 
   // --- SUB-COMPONENTS ---
   function Sidebar() {
@@ -622,12 +631,31 @@ const StudentDashboard = () => {
   }
   
   function MyAdvisorSection() {
-     if (!primaryAdvisor) return <><h1 className="text-3xl font-bold mb-8">My Advisor</h1><Card><CardContent className="p-6 text-center text-muted-foreground">Your primary advisor has not been assigned.</CardContent></Card></>
-     return <><h1 className="text-3xl font-bold mb-8">My Advisor</h1>
-      <Card><CardHeader><CardTitle>{primaryAdvisor.fullName}</CardTitle></CardHeader>
-          <CardContent><p><strong>Email:</strong> {primaryAdvisor.email}</p><p><strong><p><strong>Email:</strong> {primaryAdvisor.email}</p><p><strong>Office:</strong> {primaryAdvisor.office || 'TBA'}</p></CardContent>
-      </Card>
-     </>
+     if (!primaryAdvisor) return (
+       <>
+         <h1 className="text-3xl font-bold mb-8">My Advisor</h1>
+         <Card>
+           <CardContent className="p-6 text-center text-muted-foreground">
+             Your primary advisor has not been assigned.
+           </CardContent>
+         </Card>
+       </>
+     );
+     
+     return (
+       <>
+         <h1 className="text-3xl font-bold mb-8">My Advisor</h1>
+         <Card>
+           <CardHeader>
+             <CardTitle>{primaryAdvisor.fullName}</CardTitle>
+           </CardHeader>
+           <CardContent>
+             <p><strong>Email:</strong> {primaryAdvisor.email}</p>
+             <p><strong>Office:</strong> {primaryAdvisor.office || 'TBA'}</p>
+           </CardContent>
+         </Card>
+       </>
+     );
   }
 
   function ResourceHubSection() {
@@ -644,22 +672,60 @@ const StudentDashboard = () => {
   }
 
   function GoalTrackerSection() {
-     return <><h1 className="text-3xl font-bold mb-8">Goal Tracker</h1>
-      <Card><CardContent className="p-6">
-          <div className="flex gap-2 mb-4">
-              <Input value={newGoal} onChange={(e) => setNewGoal(e.target.value)} placeholder="Add a new goal..." onKeyPress={(e) => e.key === 'Enter' && addGoal()} />
-              <Button onClick={addGoal}>Add Goal</Button>
-          </div>
-          <div className="space-y-2">
-              {goals.map(goal => <div key={goal.id} className="flex items-center gap-3 p-2 rounded hover:bg-accent"><button onClick={() => toggleGoal(goal.id, goal.completed)}>{goal.completed ? <CheckSquare className="text-green-500"/> : <Square/>}</button><span className={goal.completed ? 'line-through text-muted-foreground' : ''}>{goal.text}</span><button onClick={() => deleteGoal(goal.id)} className="ml-auto text-muted-foreground hover:text-red-500"><Trash2 size={16}/></button></div>)}
-              {goals.length === 0 && <p className="text-muted-foreground text-center pt-4">No goals set yet. Add one to get started!</p>}
-          </div>
-      </CardContent></Card>
-     </>
+     return (
+       <>
+         <h1 className="text-3xl font-bold mb-8">Goal Tracker</h1>
+         <Card>
+           <CardContent className="p-6">
+             <div className="flex gap-2 mb-4">
+               <Input 
+                 value={newGoal} 
+                 onChange={(e) => setNewGoal(e.target.value)} 
+                 placeholder="Add a new goal..." 
+                 onKeyPress={(e) => e.key === 'Enter' && addGoal()} 
+               />
+               <Button onClick={addGoal}>Add Goal</Button>
+             </div>
+             <div className="space-y-2">
+               {goals.map(goal => (
+                 <div key={goal.id} className="flex items-center gap-3 p-2 rounded hover:bg-accent">
+                   <button onClick={() => toggleGoal(goal.id, goal.completed)}>
+                     {goal.completed ? <CheckSquare className="text-green-500"/> : <Square/>}
+                   </button>
+                   <span className={goal.completed ? 'line-through text-muted-foreground' : ''}>
+                     {goal.text}
+                   </span>
+                   <button 
+                     onClick={() => deleteGoal(goal.id)} 
+                     className="ml-auto text-muted-foreground hover:text-red-500"
+                   >
+                     <Trash2 size={16}/>
+                   </button>
+                 </div>
+               ))}
+               {goals.length === 0 && (
+                 <p className="text-muted-foreground text-center pt-4">
+                   No goals set yet. Add one to get started!
+                 </p>
+               )}
+             </div>
+           </CardContent>
+         </Card>
+       </>
+     );
   }
   
   function NotificationsSection() {
-    return <><h1 className="text-3xl font-bold mb-8">Notifications</h1><Card><CardContent className="p-6 text-center text-muted-foreground">You have no new notifications.</CardContent></Card></>;
+    return (
+      <>
+        <h1 className="text-3xl font-bold mb-8">Notifications</h1>
+        <Card>
+          <CardContent className="p-6 text-center text-muted-foreground">
+            You have no new notifications.
+          </CardContent>
+        </Card>
+      </>
+    );
   }
 
   function SettingsSection() {
@@ -668,7 +734,8 @@ const StudentDashboard = () => {
     const [autoConfirmSessions, setAutoConfirmSessions] = useState(false);
     const [selectedLanguage, setSelectedLanguage] = useState('English');
 
-    return <>
+    return (
+      <>
         <h1 className="text-3xl font-bold mb-8">Settings</h1>
         <div className="grid gap-6 md:grid-cols-2">
             <Card>
@@ -750,7 +817,7 @@ const StudentDashboard = () => {
                         <select className="w-full p-2 border rounded-md bg-background mt-1">
                             <option value="30">30 minutes</option>
                             <option value="45">45 minutes</option>
-                            <option value="60" selected>60 minutes</option>
+                            <option value="60">60 minutes</option>
                         </select>
                     </div>
                 </CardContent>
@@ -772,7 +839,8 @@ const StudentDashboard = () => {
                 </CardContent>
             </Card>
         </div>
-    </>;
+      </>
+    );
   }
   
 };
