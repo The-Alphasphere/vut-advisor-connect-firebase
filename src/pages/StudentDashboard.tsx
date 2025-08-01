@@ -69,18 +69,6 @@ const StudentDashboard = () => {
       faculty:''
   });
 
-  useEffect(() => {
-    if (user) {
-        setUserProfileState({
-            name: `${user.Name} ${user.Surname}`,
-            email: user.email,
-            avatar: `https://placehold.co/100x100/0ea5e9/ffffff?text=${user.Name.charAt(0)}`,
-            course: user.course,
-            faculty: user.faculty
-        });
-    }
-  }, [user]);
-
   // Fetch real data from Firestore
   useEffect(() => {
     if (!user?.uuid) {
@@ -90,16 +78,32 @@ const StudentDashboard = () => {
 
     setLoading(true);
     
-    // Fetch user-specific data (including primary advisor ID)
+    // Fetch user-specific data (including primary advisor ID, course, and faculty)
     const userDocRef = doc(db, "users", user.uuid);
     const unsubscribeUser = onSnapshot(userDocRef, (userDoc) => {
-        if (userDoc.exists() && userDoc.data().primaryAdvisorId) {
-            const advisorDocRef = doc(db, "users", userDoc.data().primaryAdvisorId);
-            getDoc(advisorDocRef).then(advisorDoc => {
-                if (advisorDoc.exists()) {
-                    setPrimaryAdvisor({ id: advisorDoc.id, ...advisorDoc.data() });
-                }
+        if (userDoc.exists()) {
+            const userData = userDoc.data();
+            // Set all user profile information from the Firestore document
+            setUserProfileState({
+                name: `${userData.Name || ''} ${userData.Surname || ''}`,
+                email: userData.email || '',
+                avatar: `https://placehold.co/100x100/0ea5e9/ffffff?text=${(userData.Name || 'U').charAt(0)}`,
+                course: userData.course || 'Course not set',
+                faculty: userData.faculty || 'Faculty not set'
             });
+
+            // Fetch primary advisor if the ID exists
+            if (userData.primaryAdvisorId) {
+                const advisorDocRef = doc(db, "users", userData.primaryAdvisorId);
+                getDoc(advisorDocRef).then(advisorDoc => {
+                    if (advisorDoc.exists()) {
+                        setPrimaryAdvisor({ id: advisorDoc.id, ...advisorDoc.data() });
+                    }
+                });
+            }
+        } else {
+            // Handle case where user document doesn't exist
+            setLoading(false);
         }
     });
 
@@ -107,7 +111,7 @@ const StudentDashboard = () => {
     const unsubscribeSessions = onSnapshot(sessionsQuery, (snapshot) => {
       const userSessions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Session));
       setSessions(userSessions);
-      setLoading(false);
+      setLoading(false); // Set loading to false after sessions are fetched
     });
 
     const advisorsQuery = query(collection(db, "users"), where("role", "==", "advisor"));
