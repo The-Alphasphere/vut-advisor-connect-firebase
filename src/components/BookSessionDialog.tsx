@@ -269,16 +269,19 @@ const BookSessionDialog = ({
                         <Input
                           placeholder="First Name"
                           value={member.name}
+                          maxLength={40}
                           onChange={(e) => updateGroupMember(index, 'name', e.target.value)}
                         />
                         <Input
                           placeholder="Last Name"
                           value={member.surname}
+                          maxLength={40}
                           onChange={(e) => updateGroupMember(index, 'surname', e.target.value)}
                         />
                         <Input
                           placeholder="Email (@edu.vut.ac.za)"
                           value={member.email}
+                          maxLength={30}
                           onChange={(e) => updateGroupMember(index, 'email', e.target.value)}
                         />
                       </div>
