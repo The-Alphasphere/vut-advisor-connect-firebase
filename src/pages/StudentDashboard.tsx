@@ -696,7 +696,6 @@ const StudentDashboard = () => {
              <CardTitle>{primaryAdvisor.name} {primaryAdvisor.surname}</CardTitle>
            </CardHeader>
            <CardContent>
-             <p><strong>Advisor Full Name:</strong> {primaryAdvisor.name}</p>
              <p><strong>Email:</strong> {primaryAdvisor.email}</p>
              <p><strong>Office:</strong> {primaryAdvisor.office || 'TBA'}</p>
            </CardContent>
