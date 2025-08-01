@@ -312,11 +312,7 @@ const StudentDashboard = () => {
   
   function MainDashboardView() {
     const recentSessions = upcomingSessions.slice(0, 3);
-    const recentNotifications = [
-      { id: 1, message: "Session with Dr. Smith scheduled for tomorrow", time: "2 hours ago", type: "session" },
-      { id: 2, message: "Please complete evaluation for your last session", time: "1 day ago", type: "evaluation" },
-      { id: 3, message: "New resources added to your course materials", time: "3 days ago", type: "resource" }
-    ];
+    const recentNotifications = [];
     
     return (
         <>
@@ -353,7 +349,9 @@ const StudentDashboard = () => {
                                         <p className="text-xs text-muted-foreground">{notification.time}</p>
                                     </div>
                                 </div>
-                            ))}
+                            )): (
+                                <p className="text-center text-muted-foreground py-4">No recent notifications</p>
+                            )}
                         </div>
                     </CardContent>
                 </Card>
