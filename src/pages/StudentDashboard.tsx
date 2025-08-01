@@ -245,44 +245,46 @@ const StudentDashboard = () => {
   function Sidebar() {
     return (
         <div className={`flex flex-col bg-card text-card-foreground transition-all duration-300 ${isSidebarOpen ? 'w-64' : 'w-20'} p-4 shadow-lg border-r fixed left-0 top-0 bottom-0 z-40 overflow-y-auto`}>
-          <div className="flex items-center justify-between mb-8">
-            {isSidebarOpen && (
-                 <div className="flex items-center gap-3">
-                     <div className="relative group">
-                         <img 
-                           src={userProfile.avatar} 
-                           alt="User Avatar" 
-                           className="w-10 h-10 rounded-full border-2 border-primary cursor-pointer"
-                           onClick={() => setShowProfileModal(true)}
-                         />
-                         <div className="absolute inset-0 bg-black bg-opacity-50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
-                             <User size={16} className="text-white"/>
-                         </div>
-                     </div>
-                     <span className="text-lg font-semibold">{userProfile.name}</span>
-                 </div>
-            )}
-            <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="p-2 rounded-full hover:bg-accent"><ChevronLeft size={20} /></button>
-          </div>
-          <nav className="flex-grow">
-            <ul>
-                <SidebarItem icon={<Home size={20} />} text="Dashboard" isActive={activeSection === 'dashboard'} onClick={() => setActiveSection('dashboard')} />
-                <SidebarItem icon={<Calendar size={20} />} text="My Sessions" isActive={activeSection === 'my-sessions'} onClick={() => setActiveSection('my-sessions')} />
-                <SidebarItem icon={<BarChart2 size={20} />} text="My Journey" isActive={activeSection === 'analytics'} onClick={() => setActiveSection('analytics')} />
-                <SidebarItem icon={<User size={20} />} text="My Advisor" isActive={activeSection === 'my-advisor'} onClick={() => setActiveSection('my-advisor')} />
-                <SidebarItem icon={<LinkIcon size={20} />} text="Resource Hub" isActive={activeSection === 'resource-hub'} onClick={() => setActiveSection('resource-hub')} />
-                <SidebarItem icon={<Flag size={20} />} text="Goal Tracker" isActive={activeSection === 'goal-tracker'} onClick={() => setActiveSection('goal-tracker')} />
-                <SidebarItem icon={<Bell size={20} />} text="Notifications" isActive={activeSection === 'notifications'} onClick={() => setActiveSection('notifications')} />
-            </ul>
-          </nav>
-          <div className="mt-auto">
-            <LogoutConfirmation onLogout={logout}>
-                <button className={`flex items-center w-full p-3 rounded-lg transition-colors duration-200 text-muted-foreground hover:bg-accent hover:text-red-500 ${isSidebarOpen ? 'justify-start' : 'justify-center'}`}>
-                    <LogOut size={20} />
-                    {isSidebarOpen && <span className="ml-3 text-sm font-medium">Logout</span>}
-                </button>
-            </LogoutConfirmation>
-          </div>
+            <div className="flex items-center justify-between mb-8">
+                {isSidebarOpen && (
+                    <div 
+                        className="flex items-center gap-3 p-1 rounded-lg hover:bg-accent transition-colors duration-200 cursor-pointer"
+                        onClick={() => setShowProfileModal(true)}
+                    >
+                        <div className="relative group">
+                            <img 
+                                src={userProfile.avatar} 
+                                alt="User Avatar" 
+                                className="w-10 h-10 rounded-full border-2 border-primary"
+                            />
+                            <div className="absolute inset-0 bg-black bg-opacity-50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                <User size={16} className="text-white"/>
+                            </div>
+                        </div>
+                        <span className="text-lg font-semibold">{userProfile.name}</span>
+                    </div>
+                )}
+                <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="p-2 rounded-full hover:bg-accent"><ChevronLeft size={20} /></button>
+            </div>
+            <nav className="flex-grow">
+                <ul>
+                    <SidebarItem icon={<Home size={20} />} text="Dashboard" isActive={activeSection === 'dashboard'} onClick={() => setActiveSection('dashboard')} />
+                    <SidebarItem icon={<Calendar size={20} />} text="My Sessions" isActive={activeSection === 'my-sessions'} onClick={() => setActiveSection('my-sessions')} />
+                    <SidebarItem icon={<BarChart2 size={20} />} text="My Journey" isActive={activeSection === 'analytics'} onClick={() => setActiveSection('analytics')} />
+                    <SidebarItem icon={<User size={20} />} text="My Advisor" isActive={activeSection === 'my-advisor'} onClick={() => setActiveSection('my-advisor')} />
+                    <SidebarItem icon={<LinkIcon size={20} />} text="Resource Hub" isActive={activeSection === 'resource-hub'} onClick={() => setActiveSection('resource-hub')} />
+                    <SidebarItem icon={<Flag size={20} />} text="Goal Tracker" isActive={activeSection === 'goal-tracker'} onClick={() => setActiveSection('goal-tracker')} />
+                    <SidebarItem icon={<Bell size={20} />} text="Notifications" isActive={activeSection === 'notifications'} onClick={() => setActiveSection('notifications')} />
+                </ul>
+            </nav>
+            <div className="mt-auto">
+                <LogoutConfirmation onLogout={logout}>
+                    <button className={`flex items-center w-full p-3 rounded-lg transition-colors duration-200 text-muted-foreground hover:bg-accent hover:text-red-500 ${isSidebarOpen ? 'justify-start' : 'justify-center'}`}>
+                        <LogOut size={20} />
+                        {isSidebarOpen && <span className="ml-3 text-sm font-medium">Logout</span>}
+                    </button>
+                </LogoutConfirmation>
+            </div>
         </div>
     );
   }
@@ -428,185 +430,185 @@ const StudentDashboard = () => {
     return <>
         <h1 className="text-3xl font-bold mb-8">My Academic Journey</h1>
         <div className="space-y-8">
-                 {/* First Charts Row */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                                <BarChart2 size={20} />
-                                Session Topics Breakdown
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <ResponsiveContainer width="100%" height={300}>
-                                <PieChart>
-                                    <Pie data={sessionReasonData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} label>
-                                        {sessionReasonData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
-                                    </Pie>
-                                    <Tooltip/>
-                                </PieChart>
-                            </ResponsiveContainer>
-                        </CardContent>
-                    </Card>
-                    
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                                <TrendingUp size={20} />
-                                Sessions Per Month
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <ResponsiveContainer width="100%" height={300}>
-                                <BarChart data={sessionsPerMonth}>
-                                    <CartesianGrid strokeDasharray="3 3" />
-                                    <XAxis dataKey="name"/>
-                                    <YAxis/>
-                                    <Tooltip/>
-                                    <Bar dataKey="sessions" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                                </BarChart>
-                            </ResponsiveContainer>
-                        </CardContent>
-                    </Card>
-                </div>
+                     {/* First Charts Row */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2">
+                                    <BarChart2 size={20} />
+                                    Session Topics Breakdown
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <ResponsiveContainer width="100%" height={300}>
+                                    <PieChart>
+                                        <Pie data={sessionReasonData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} label>
+                                            {sessionReasonData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
+                                        </Pie>
+                                        <Tooltip/>
+                                    </PieChart>
+                                </ResponsiveContainer>
+                            </CardContent>
+                        </Card>
+                        
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2">
+                                    <TrendingUp size={20} />
+                                    Sessions Per Month
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <ResponsiveContainer width="100%" height={300}>
+                                    <BarChart data={sessionsPerMonth}>
+                                        <CartesianGrid strokeDasharray="3 3" />
+                                        <XAxis dataKey="name"/>
+                                        <YAxis/>
+                                        <Tooltip/>
+                                        <Bar dataKey="sessions" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            </CardContent>
+                        </Card>
+                    </div>
 
-                {/* Second Charts Row */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                                <BarChart2 size={20} />
-                                Session Status Distribution
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <ResponsiveContainer width="100%" height={300}>
-                                <PieChart>
-                                    <Pie data={sessionStatusData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} label>
-                                        {sessionStatusData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
-                                    </Pie>
-                                    <Tooltip/>
-                                </PieChart>
-                            </ResponsiveContainer>
-                        </CardContent>
-                    </Card>
-                    
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                                <TrendingUp size={20} />
-                                Weekly Session Activity
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <ResponsiveContainer width="100%" height={300}>
-                                <LineChart data={sessionsPerWeek}>
-                                    <CartesianGrid strokeDasharray="3 3" />
-                                    <XAxis dataKey="name"/>
-                                    <YAxis/>
-                                    <Tooltip/>
-                                    <Line type="monotone" dataKey="sessions" stroke="hsl(var(--primary))" strokeWidth={3} dot={{ fill: 'hsl(var(--primary))' }} />
-                                </LineChart>
-                            </ResponsiveContainer>
-                        </CardContent>
-                    </Card>
-                </div>
+                    {/* Second Charts Row */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2">
+                                    <BarChart2 size={20} />
+                                    Session Status Distribution
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <ResponsiveContainer width="100%" height={300}>
+                                    <PieChart>
+                                        <Pie data={sessionStatusData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} label>
+                                            {sessionStatusData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
+                                        </Pie>
+                                        <Tooltip/>
+                                    </PieChart>
+                                </ResponsiveContainer>
+                            </CardContent>
+                        </Card>
+                        
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2">
+                                    <TrendingUp size={20} />
+                                    Weekly Session Activity
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <ResponsiveContainer width="100%" height={300}>
+                                    <LineChart data={sessionsPerWeek}>
+                                        <CartesianGrid strokeDasharray="3 3" />
+                                        <XAxis dataKey="name"/>
+                                        <YAxis/>
+                                        <Tooltip/>
+                                        <Line type="monotone" dataKey="sessions" stroke="hsl(var(--primary))" strokeWidth={3} dot={{ fill: 'hsl(var(--primary))' }} />
+                                    </LineChart>
+                                </ResponsiveContainer>
+                            </CardContent>
+                        </Card>
+                    </div>
 
-                {/* Third Charts Row */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                                <Target size={20} />
-                                Session Performance Metrics
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <ResponsiveContainer width="100%" height={300}>
-                                <BarChart data={performanceData}>
-                                    <CartesianGrid strokeDasharray="3 3" />
-                                    <XAxis dataKey="session"/>
-                                    <YAxis/>
-                                    <Tooltip/>
-                                    <Bar dataKey="satisfaction" fill="#10b981" name="Satisfaction (1-5)" radius={[4, 4, 0, 0]} />
-                                    <Bar dataKey="progress" fill="#0ea5e9" name="Progress %" radius={[4, 4, 0, 0]} />
-                                </BarChart>
-                            </ResponsiveContainer>
-                        </CardContent>
-                    </Card>
-                    
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                                <BarChart2 size={20} />
-                                Advisor Interaction Frequency
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <ResponsiveContainer width="100%" height={300}>
-                                <BarChart data={sessions.slice(0, 5).map(s => ({ name: s.advisor_name.split(' ')[0], sessions: Math.floor(Math.random() * 8) + 1 }))}>
-                                    <CartesianGrid strokeDasharray="3 3" />
-                                    <XAxis dataKey="name"/>
-                                    <YAxis/>
-                                    <Tooltip/>
-                                    <Bar dataKey="sessions" fill="hsl(var(--accent-foreground))" radius={[4, 4, 0, 0]} />
-                                </BarChart>
-                            </ResponsiveContainer>
-                        </CardContent>
-                    </Card>
-                </div>
+                    {/* Third Charts Row */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2">
+                                    <Target size={20} />
+                                    Session Performance Metrics
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <ResponsiveContainer width="100%" height={300}>
+                                    <BarChart data={performanceData}>
+                                        <CartesianGrid strokeDasharray="3 3" />
+                                        <XAxis dataKey="session"/>
+                                        <YAxis/>
+                                        <Tooltip/>
+                                        <Bar dataKey="satisfaction" fill="#10b981" name="Satisfaction (1-5)" radius={[4, 4, 0, 0]} />
+                                        <Bar dataKey="progress" fill="#0ea5e9" name="Progress %" radius={[4, 4, 0, 0]} />
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            </CardContent>
+                        </Card>
+                        
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2">
+                                    <BarChart2 size={20} />
+                                    Advisor Interaction Frequency
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <ResponsiveContainer width="100%" height={300}>
+                                    <BarChart data={sessions.slice(0, 5).map(s => ({ name: s.advisor_name.split(' ')[0], sessions: Math.floor(Math.random() * 8) + 1 }))}>
+                                        <CartesianGrid strokeDasharray="3 3" />
+                                        <XAxis dataKey="name"/>
+                                        <YAxis/>
+                                        <Tooltip/>
+                                        <Bar dataKey="sessions" fill="hsl(var(--accent-foreground))" radius={[4, 4, 0, 0]} />
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            </CardContent>
+                        </Card>
+                    </div>
 
-                {/* Timeline and AI Insights Row */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                                <Calendar size={20} />
-                                Your Advising Timeline
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="space-y-4">
-                                {timelineData.map((item, index) => (
-                                    <div key={index} className="flex items-start gap-4 pb-4 border-b last:border-b-0">
-                                        <div className="w-3 h-3 rounded-full bg-primary mt-2 flex-shrink-0" />
-                                        <div className="flex-1">
-                                            <p className="font-medium">{item.event}</p>
-                                            <p className="text-sm text-muted-foreground">{item.type}</p>
-                                            <p className="text-xs text-muted-foreground">{item.date}</p>
-                                            <Badge variant="outline" className="mt-1">{item.status}</Badge>
+                    {/* Timeline and AI Insights Row */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2">
+                                    <Calendar size={20} />
+                                    Your Advising Timeline
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="space-y-4">
+                                    {timelineData.map((item, index) => (
+                                        <div key={index} className="flex items-start gap-4 pb-4 border-b last:border-b-0">
+                                            <div className="w-3 h-3 rounded-full bg-primary mt-2 flex-shrink-0" />
+                                            <div className="flex-1">
+                                                <p className="font-medium">{item.event}</p>
+                                                <p className="text-sm text-muted-foreground">{item.type}</p>
+                                                <p className="text-xs text-muted-foreground">{item.date}</p>
+                                                <Badge variant="outline" className="mt-1">{item.status}</Badge>
+                                            </div>
                                         </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </CardContent>
-                    </Card>
+                                    ))}
+                                </div>
+                            </CardContent>
+                        </Card>
 
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                                <Lightbulb size={20} />
-                                AI Actionable Insights
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="space-y-4">
-                                {aiInsights.map((insight, index) => (
-                                    <div key={index} className="flex items-start gap-3 p-3 rounded-lg bg-accent/50">
-                                        <Target size={16} className="text-primary mt-0.5 flex-shrink-0" />
-                                        <p className="text-sm">{insight}</p>
-                                    </div>
-                                ))}
-                                {sessions.length === 0 && (
-                                    <p className="text-center text-muted-foreground py-4">
-                                        Complete more sessions to receive personalized insights.
-                                    </p>
-                                )}
-                            </div>
-                        </CardContent>
-                    </Card>
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2">
+                                    <Lightbulb size={20} />
+                                    AI Actionable Insights
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="space-y-4">
+                                    {aiInsights.map((insight, index) => (
+                                        <div key={index} className="flex items-start gap-3 p-3 rounded-lg bg-accent/50">
+                                            <Target size={16} className="text-primary mt-0.5 flex-shrink-0" />
+                                            <p className="text-sm">{insight}</p>
+                                        </div>
+                                    ))}
+                                    {sessions.length === 0 && (
+                                        <p className="text-center text-muted-foreground py-4">
+                                            Complete more sessions to receive personalized insights.
+                                        </p>
+                                    )}
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
                 </div>
-            </div>
         
         {/* Show message if no sessions */}
         {sessions.length === 0 && (
@@ -616,12 +618,12 @@ const StudentDashboard = () => {
   }
   
   function MyAdvisorSection() {
-      if (!primaryAdvisor) return <><h1 className="text-3xl font-bold mb-8">My Advisor</h1><Card><CardContent className="p-6 text-center text-muted-foreground">Your primary advisor has not been assigned.</CardContent></Card></>
-      return <><h1 className="text-3xl font-bold mb-8">My Advisor</h1>
-        <Card><CardHeader><CardTitle>{primaryAdvisor.fullName}</CardTitle></CardHeader>
-            <CardContent><p><strong>Email:</strong> {primaryAdvisor.email}</p><p><strong>Office:</strong> {primaryAdvisor.office || 'TBA'}</p></CardContent>
-        </Card>
-      </>
+     if (!primaryAdvisor) return <><h1 className="text-3xl font-bold mb-8">My Advisor</h1><Card><CardContent className="p-6 text-center text-muted-foreground">Your primary advisor has not been assigned.</CardContent></Card></>
+     return <><h1 className="text-3xl font-bold mb-8">My Advisor</h1>
+      <Card><CardHeader><CardTitle>{primaryAdvisor.fullName}</CardTitle></CardHeader>
+          <CardContent><p><strong>Email:</strong> {primaryAdvisor.email}</p><p><strong>Office:</strong> {primaryAdvisor.office || 'TBA'}</p></CardContent>
+      </Card>
+     </>
   }
 
   function ResourceHubSection() {
@@ -638,18 +640,18 @@ const StudentDashboard = () => {
   }
 
   function GoalTrackerSection() {
-      return <><h1 className="text-3xl font-bold mb-8">Goal Tracker</h1>
-        <Card><CardContent className="p-6">
-            <div className="flex gap-2 mb-4">
-                <Input value={newGoal} onChange={(e) => setNewGoal(e.target.value)} placeholder="Add a new goal..." onKeyPress={(e) => e.key === 'Enter' && addGoal()} />
-                <Button onClick={addGoal}>Add Goal</Button>
-            </div>
-            <div className="space-y-2">
-                {goals.map(goal => <div key={goal.id} className="flex items-center gap-3 p-2 rounded hover:bg-accent"><button onClick={() => toggleGoal(goal.id, goal.completed)}>{goal.completed ? <CheckSquare className="text-green-500"/> : <Square/>}</button><span className={goal.completed ? 'line-through text-muted-foreground' : ''}>{goal.text}</span><button onClick={() => deleteGoal(goal.id)} className="ml-auto text-muted-foreground hover:text-red-500"><Trash2 size={16}/></button></div>)}
-                {goals.length === 0 && <p className="text-muted-foreground text-center pt-4">No goals set yet. Add one to get started!</p>}
-            </div>
-        </CardContent></Card>
-      </>
+     return <><h1 className="text-3xl font-bold mb-8">Goal Tracker</h1>
+      <Card><CardContent className="p-6">
+          <div className="flex gap-2 mb-4">
+              <Input value={newGoal} onChange={(e) => setNewGoal(e.target.value)} placeholder="Add a new goal..." onKeyPress={(e) => e.key === 'Enter' && addGoal()} />
+              <Button onClick={addGoal}>Add Goal</Button>
+          </div>
+          <div className="space-y-2">
+              {goals.map(goal => <div key={goal.id} className="flex items-center gap-3 p-2 rounded hover:bg-accent"><button onClick={() => toggleGoal(goal.id, goal.completed)}>{goal.completed ? <CheckSquare className="text-green-500"/> : <Square/>}</button><span className={goal.completed ? 'line-through text-muted-foreground' : ''}>{goal.text}</span><button onClick={() => deleteGoal(goal.id)} className="ml-auto text-muted-foreground hover:text-red-500"><Trash2 size={16}/></button></div>)}
+              {goals.length === 0 && <p className="text-muted-foreground text-center pt-4">No goals set yet. Add one to get started!</p>}
+          </div>
+      </CardContent></Card>
+     </>
   }
   
   function NotificationsSection() {
