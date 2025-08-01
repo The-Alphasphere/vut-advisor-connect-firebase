@@ -58,6 +58,7 @@ const BookSessionDialog = ({
     'Internship Guidance',
     'Research Opportunities',
     'Other'
+    // You can add more reasons here
   ];
 
   const timeSlots = [
@@ -70,7 +71,7 @@ const BookSessionDialog = ({
       const isSelected = prev.includes(reason);
       if (isSelected) {
         if (reason === 'Other') {
-          setOtherReasonText(''); // Clear other reason text when deselected
+          setOtherReasonText('');
         }
         return prev.filter(r => r !== reason);
       } else {
@@ -170,7 +171,7 @@ const BookSessionDialog = ({
   };
 
   const today = startOfDay(new Date());
-  const maxDate = addDays(today, 9); // Today + 9 days = 10 day window
+  const maxDate = addDays(today, 9);
 
   return (
     <>
@@ -320,7 +321,8 @@ const BookSessionDialog = ({
                         </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                        <div className="p-2 space-y-1">
+                        {/* MODIFICATION HERE: Added max-height and overflow-y-auto for scrollbar */}
+                        <div className="p-2 space-y-1 max-h-[250px] overflow-y-auto">
                             {reasonOptions.map(reason => {
                                 const isSelected = selectedReasons.includes(reason);
                                 const isDisabled = !isSelected && selectedReasons.length >= 4;
