@@ -349,9 +349,8 @@ const StudentDashboard = () => {
                                         <p className="text-xs text-muted-foreground">{notification.time}</p>
                                     </div>
                                 </div>
-                            )): (
-                                <p className="text-center text-muted-foreground py-4">No recent notifications</p>
-                            )}
+                            ))}
+                          <p className="text-center text-muted-foreground py-4">No recent notifications</p>
                         </div>
                     </CardContent>
                 </Card>
