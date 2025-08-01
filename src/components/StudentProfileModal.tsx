@@ -15,6 +15,8 @@ interface StudentProfileModalProps {
     name: string;
     email: string;
     avatar: string;
+    course: string;
+    faculty : string;
   };
   onAvatarChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
 }
@@ -26,10 +28,6 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
   onAvatarChange
 }) => {
   const { user } = useAuth();
-  const [profileData, setProfileData] = useState({
-    course: 'Computer Science',
-    faculty: 'Applied & Computer Sciences'
-  });
 
   const handleSave = () => {
     toast.success("Profile updated successfully!");
