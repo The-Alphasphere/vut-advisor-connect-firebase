@@ -37,7 +37,8 @@ const BookSessionDialog = ({
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [selectedTime, setSelectedTime] = useState('');
   const [sessionType, setSessionType] = useState('individual');
-  const [selectedReason, setSelectedReason] = useState('');
+  const [selectedReasons, setSelectedReasons] = useState<string[]>([]);
+  const [otherReasonText, setOtherReasonText] = useState('');
   const [mode, setMode] = useState('in-person');
   const [numberOfStudents, setNumberOfStudents] = useState(1);
   const [groupMembers, setGroupMembers] = useState<GroupMember[]>([
@@ -94,8 +95,13 @@ const BookSessionDialog = ({
   };
 
   const validateForm = () => {
-    if (!selectedDate || !selectedTime || !selectedReason) {
+    if (!selectedDate || !selectedTime || selectedReasons.length === 0) {
       toast.error('Please fill in all required fields');
+      return false;
+    }
+
+    if (selectedReasons.includes('Other') && !otherReasonText.trim()) {
+      toast.error('Please specify the other reason');
       return false;
     }
 
@@ -138,7 +144,8 @@ const BookSessionDialog = ({
       sessionType,
       selectedDate,
       selectedTime,
-      selectedReason,
+      selectedReasons,
+      otherReasonText: selectedReasons.includes('Other') ? otherReasonText : undefined,
       mode,
       groupMembers: sessionType === 'group' ? groupMembers.filter(m => m.name && m.surname && m.email) : undefined,
       comments
@@ -154,7 +161,8 @@ const BookSessionDialog = ({
     setSelectedDate(undefined);
     setSelectedTime('');
     setSessionType('individual');
-    setSelectedReason('');
+    setSelectedReasons([]);
+    setOtherReasonText('');
     setMode('in-person');
     setNumberOfStudents(1);
     setGroupMembers([{ name: '', surname: '', email: '' }]);
@@ -292,19 +300,45 @@ const BookSessionDialog = ({
 
             {/* Reason for Session */}
             <div>
-              <Label htmlFor="reason-select" className="mb-2 block font-medium">Reason for Session *</Label>
-              <Select value={selectedReason} onValueChange={setSelectedReason}>
-                <SelectTrigger id="reason-select" className="w-full">
-                  <SelectValue placeholder="Select reason for session" />
-                </SelectTrigger>
-                <SelectContent>
-                  {reasonOptions.map(reason => (
-                    <SelectItem key={reason} value={reason}>
-                      {reason}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label className="mb-2 block font-medium">Reason for Session * (Select all that apply)</Label>
+              <div className="space-y-2 max-h-48 overflow-y-auto border rounded-md p-3">
+                {reasonOptions.map(reason => (
+                  <label key={reason} className="flex items-center space-x-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={selectedReasons.includes(reason)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedReasons([...selectedReasons, reason]);
+                        } else {
+                          setSelectedReasons(selectedReasons.filter(r => r !== reason));
+                          if (reason === 'Other') {
+                            setOtherReasonText('');
+                          }
+                        }
+                      }}
+                      className="rounded border-gray-300"
+                    />
+                    <span className="text-sm">{reason}</span>
+                  </label>
+                ))}
+              </div>
+              
+              {/* Other reason text field */}
+              {selectedReasons.includes('Other') && (
+                <div className="mt-3">
+                  <Label htmlFor="other-reason" className="mb-1 block text-sm font-medium">
+                    Please specify:
+                  </Label>
+                  <Input
+                    id="other-reason"
+                    value={otherReasonText}
+                    onChange={(e) => setOtherReasonText(e.target.value)}
+                    placeholder="Please describe your specific reason..."
+                    required
+                  />
+                </div>
+              )}
             </div>
 
             {/* Time Slot */}
@@ -373,7 +407,14 @@ const BookSessionDialog = ({
                 <div><strong>Session Type:</strong> {sessionType === 'individual' ? 'Individual Session' : 'Group Session'}</div>
                 <div><strong>Date:</strong> {selectedDate ? format(selectedDate, 'PPP') : 'Not selected'}</div>
                 <div><strong>Time:</strong> {selectedTime || 'Not selected'}</div>
-                <div><strong>Reason:</strong> {selectedReason || 'Not selected'}</div>
+                <div>
+                  <strong>Reasons:</strong> {selectedReasons.length > 0 ? selectedReasons.join(', ') : 'Not selected'}
+                  {selectedReasons.includes('Other') && otherReasonText && (
+                    <div className="ml-4 mt-1 text-sm text-muted-foreground">
+                      Other: {otherReasonText}
+                    </div>
+                  )}
+                </div>
                 <div><strong>Mode:</strong> {mode === 'in-person' ? 'In-person' : 'Online'}</div>
                 
                 {sessionType === 'group' && (

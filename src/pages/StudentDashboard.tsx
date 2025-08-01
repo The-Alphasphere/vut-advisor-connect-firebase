@@ -50,6 +50,7 @@ interface Advisor {
     id: string;
     name: string;
     room_number: string;
+    email?: string;
     // other properties can exist
 }
 
@@ -526,7 +527,7 @@ const StudentDashboard = () => {
              <CardTitle>{primaryAdvisor.name}</CardTitle>
            </CardHeader>
            <CardContent>
-             <p><strong>Email:</strong> {advisors.find(a => a.id === primaryAdvisor.id)?.email || 'N/A'}</p>
+             <p><strong>Email:</strong> {primaryAdvisor.email || 'N/A'}</p>
              <p><strong>Office:</strong> {primaryAdvisor.room_number}</p>
            </CardContent>
          </Card>
