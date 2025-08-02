@@ -2,14 +2,14 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { db } from '@/lib/firebase';
-import { collection, query, where, onSnapshot, addDoc, serverTimestamp, updateDoc, doc, getDoc, deleteDoc } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, addDoc, serverTimestamp, updateDoc, doc, getDoc, deleteDoc, orderBy } from 'firebase/firestore';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Home, BarChart2, Bell, Settings, User, Calendar, Clock, ChevronLeft, Download, Plus, LogOut, Camera, Link as LinkIcon, Flag, CheckSquare, Square, Trash2, TrendingUp, Target, Lightbulb, Users, Edit, XCircle } from 'lucide-react';
+import { Home, BarChart2, Bell, User, Calendar, Clock, ChevronLeft, Download, Plus, LogOut, Camera, Link as LinkIcon, Flag, CheckSquare, Square, Trash2, TrendingUp, Target, Lightbulb, Users, Edit, XCircle, Info, MapPin } from 'lucide-react';
 import { toast } from 'sonner';
-import { format } from 'date-fns';
+import { format, formatDistanceToNow } from 'date-fns';
 import StudentSessionEvaluation from '@/components/StudentSessionEvaluation';
 import BookSessionDialog from '@/components/BookSessionDialog';
 import LogoutConfirmation from '@/components/LogoutConfirmation';
@@ -35,6 +35,7 @@ interface AdvisorInfo {
     surname: string;
     email: string;
     office: string;
+    faculty: string;
 }
 
 interface Session {
@@ -67,6 +68,14 @@ interface Advisor {
     faculty: string;
 }
 
+interface Notification {
+    id: string;
+    userId: string;
+    message: string;
+    timestamp: { toDate: () => Date };
+    isRead: boolean;
+}
+
 const StudentDashboard = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -76,6 +85,7 @@ const StudentDashboard = () => {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [primaryAdvisor, setPrimaryAdvisor] = useState<Advisor | null>(null);
   const [goals, setGoals] = useState<Goal[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [newGoal, setNewGoal] = useState("");
   const [loading, setLoading] = useState(true);
   
@@ -102,57 +112,73 @@ const StudentDashboard = () => {
       return;
     }
 
-    setLoading(true);
-    
-    const userDocRef = doc(db, "users", user.uuid);
-    const unsubscribeUser = onSnapshot(userDocRef, (userDoc) => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const userDocRef = doc(db, "users", user.uuid);
+        const userDoc = await getDoc(userDocRef);
+
         if (userDoc.exists()) {
-            const userData = userDoc.data();
-            setUserProfileState({
-                name: userData.Name || '',
-                surname: userData.Surname || '',
-                email: userData.email || '',
-                studentNumber: userData.studentNumber || 'N/A',
-                avatar: userData.profileURL || `https://placehold.co/100x100/0ea5e9/ffffff?text=${(userData.Name || 'U').charAt(0)}`,
-                course: userData.course || 'Course not set',
-                faculty: userData.faculty || 'Faculty not set'
-            });
-
-            if (userData.primaryAdvisorId) {
-                const advisorDocRef = doc(db, "users", userData.primaryAdvisorId);
-                getDoc(advisorDocRef).then(advisorDoc => {
-                    if (advisorDoc.exists()) {
-                        const advisorData = advisorDoc.data();
-                        setPrimaryAdvisor({ 
-                            id: advisorDoc.id, 
-                            name: advisorData.Name || 'N/A', 
-                            surname: advisorData.Surname || '',
-                            email: advisorData.email || 'N/A',
-                            office: advisorData.office || 'N/A',
-                            faculty: advisorData.faculty || 'N/A'
-                        });
-                    }
-                });
-            }
-        } else {
-            setLoading(false);
+          const userData = userDoc.data();
+          const profileData = {
+              name: userData.Name || '',
+              surname: userData.Surname || '',
+              email: userData.email || '',
+              studentNumber: userData.studentNumber || 'N/A',
+              avatar: userData.profileURL || `https://placehold.co/100x100/0ea5e9/ffffff?text=${(userData.Name || 'U').charAt(0)}`,
+              course: userData.course || 'Course not set',
+              faculty: userData.faculty || 'Faculty not set'
+          };
+          
+          let advisorData = null;
+          if (userData.primaryAdvisorId) {
+              const advisorDocRef = doc(db, "users", userData.primaryAdvisorId);
+              const advisorDoc = await getDoc(advisorDocRef);
+              if (advisorDoc.exists()) {
+                  const ad = advisorDoc.data();
+                  advisorData = { 
+                      id: advisorDoc.id, 
+                      name: ad.Name || 'N/A', 
+                      surname: ad.Surname || '',
+                      email: ad.email || 'N/A',
+                      office: ad.office || 'N/A',
+                      faculty: ad.faculty || 'N/A'
+                  };
+              }
+          }
+          
+          setUserProfileState(profileData);
+          setPrimaryAdvisor(advisorData);
         }
-    });
+      } catch (error) {
+        console.error("Error fetching initial data:", error);
+        toast.error("Could not load your dashboard data.");
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    const sessionsQuery = query(collection(db, "sessions"), where("studentInfo.studentId", "==", user.uuid));
+    fetchData();
+
+    const sessionsQuery = query(collection(db, "sessions"), where("studentInfo.studentId", "==", user.uuid), orderBy("sessionDateTime", "desc"));
     const unsubscribeSessions = onSnapshot(sessionsQuery, (snapshot) => {
       const userSessions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Session));
       setSessions(userSessions);
-      setLoading(false);
     });
     
     const goalsQuery = query(collection(db, "users", user.uuid, "goals"));
     const unsubscribeGoals = onSnapshot(goalsQuery, (snapshot) => setGoals(snapshot.docs.map(doc => ({id: doc.id, ...doc.data() } as Goal))));
 
+    const notificationsQuery = query(collection(db, "notifications"), where("userId", "==", user.uuid), orderBy("timestamp", "desc"));
+    const unsubscribeNotifications = onSnapshot(notificationsQuery, (snapshot) => {
+        const userNotifications = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Notification));
+        setNotifications(userNotifications);
+    });
+
     return () => {
-      unsubscribeUser();
       unsubscribeSessions();
       unsubscribeGoals();
+      unsubscribeNotifications();
     };
   }, [user?.uuid]);
   
@@ -226,8 +252,24 @@ const StudentDashboard = () => {
             createdAt: serverTimestamp(),
         };
 
-        await addDoc(collection(db, "sessions"), newSession);
+        const sessionDocRef = await addDoc(collection(db, "sessions"), newSession);
         toast.success("Session booked successfully!");
+        
+        const notificationMessage = `New session booked with ${primaryAdvisor.name} ${primaryAdvisor.surname} on ${format(sessionDateTime, 'PPP')}.`;
+        await addDoc(collection(db, "notifications"), {
+            userId: user.uuid,
+            message: notificationMessage,
+            timestamp: serverTimestamp(),
+            isRead: false
+        });
+
+        await addDoc(collection(db, "notifications"), {
+            userId: primaryAdvisor.id,
+            message: `New session booked by ${userProfile.name} ${userProfile.surname} on ${format(sessionDateTime, 'PPP')}.`,
+            timestamp: serverTimestamp(),
+            isRead: false
+        });
+
         setShowBookingDialog(false);
 
     } catch (error) {
@@ -237,7 +279,6 @@ const StudentDashboard = () => {
   };
 
   const handleCancelSession = async (sessionId: string) => {
-    // Replace window.confirm with a custom modal in a real app
     if(window.confirm("Are you sure you want to cancel this session? This action cannot be undone.")) {
         const sessionRef = doc(db, "sessions", sessionId);
         try {
@@ -382,6 +423,7 @@ const StudentDashboard = () => {
   
   function MainDashboardView() {
     const recentSessions = upcomingSessions.slice(0, 3);
+    const recentNotifications = notifications.slice(0, 3);
     return (
         <>
             <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
@@ -396,17 +438,31 @@ const StudentDashboard = () => {
             </div>
             
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <Card>
+                <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveSection('notifications')}>
                     <CardHeader><CardTitle className="flex items-center gap-2"><Bell size={20} /> Recent Notifications</CardTitle></CardHeader>
-                    <CardContent><p className="text-center text-muted-foreground py-4">No new notifications.</p></CardContent>
+                    <CardContent>
+                        <div className="space-y-3">
+                            {recentNotifications.length > 0 ? recentNotifications.map(notification => (
+                                <div key={notification.id} className="flex items-start gap-3 p-2 rounded-lg">
+                                    {!notification.isRead && <div className="w-2 h-2 rounded-full mt-2 bg-primary flex-shrink-0" />}
+                                    <div className="flex-1 pl-1">
+                                        <p className="text-sm">{notification.message}</p>
+                                        <p className="text-xs text-muted-foreground">{formatDistanceToNow(notification.timestamp.toDate(), { addSuffix: true })}</p>
+                                    </div>
+                                </div>
+                            )) : (
+                                <p className="text-center text-muted-foreground py-4">No new notifications.</p>
+                            )}
+                        </div>
+                    </CardContent>
                 </Card>
 
-                <Card>
+                <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveSection('my-sessions')}>
                     <CardHeader><CardTitle className="flex items-center gap-2"><Calendar size={20} /> Latest Sessions</CardTitle></CardHeader>
                     <CardContent>
                         <div className="space-y-3">
                             {recentSessions.length > 0 ? recentSessions.map(session => (
-                                <SessionCard key={session.id} session={session} />
+                                <SessionCard key={session.id} session={session} showActions={false} />
                             )) : (
                                 <p className="text-center text-muted-foreground py-4">No upcoming sessions</p>
                             )}
@@ -443,9 +499,8 @@ const StudentDashboard = () => {
         </div>
         <div className="space-y-4">
             {sessionsForTab(activeSessionTab).length > 0 ? 
-                sessionsForTab(activeSessionTab).map(s => <SessionCard key={s.id} session={s} />) :
+                sessionsForTab(activeSessionTab).map(s => <SessionCard key={s.id} session={s} showActions={true} />) :
                 <Card><CardContent className="p-6 text-center text-muted-foreground">No sessions in this category.</CardContent></Card>
-            }
         </div>
     </>;
   }
@@ -454,33 +509,40 @@ const StudentDashboard = () => {
     return <button onClick={onClick} className={`py-2 px-4 text-sm font-medium ${isActive ? 'border-b-2 border-primary text-primary' : 'text-muted-foreground'}`}>{title}</button>
   }
   
-  function SessionCard({ session }: { session: Session }) { 
+  function SessionCard({ session, showActions }: { session: Session, showActions: boolean }) { 
     const isGroup = session.sessionType === 'Group';
     const displayReasons = session.reasons.map(r => r === 'Other' ? session.otherReason || 'Other' : r).join(', ');
 
     return (
         <Card>
-            <CardContent className="p-4 flex flex-col sm:flex-row justify-between sm:items-center gap-4">
-                <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-1">
+            <CardContent className="p-4 flex flex-col sm:flex-row justify-between gap-4">
+                <div className="flex-1 space-y-2">
+                    <div>
                         <p className="font-semibold">{session.advisorInfo.name} {session.advisorInfo.surname}</p>
-                        {isGroup && <Badge variant="secondary" className="flex items-center gap-1"><Users size={12}/> Group</Badge>}
+                        <p className="text-xs text-muted-foreground">{session.referenceCode}</p>
                     </div>
-                    <p className="text-sm text-muted-foreground truncate" title={displayReasons}>{displayReasons}</p>
-                    <p className="text-sm text-muted-foreground">{format(session.sessionDateTime.toDate(), 'PPP, p')}</p>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Calendar size={14} />
+                        <span>{format(session.sessionDateTime.toDate(), 'PPP, p')}</span>
+                    </div>
+                    <div className="pt-1">
+                        <p className="text-sm"><strong className="font-medium">Reason:</strong> {displayReasons}</p>
+                        <p className="text-sm"><strong className="font-medium">Type:</strong> {session.sessionType} {isGroup && `(${session.groupMembers?.length || 0} members)`}</p>
+                        <p className="text-sm"><strong className="font-medium">Mode:</strong> {session.mode}</p>
+                    </div>
                 </div>
-                <div className="flex items-center gap-2 flex-shrink-0 self-start sm:self-center">
+                <div className="flex flex-col items-start sm:items-end gap-2">
                     <Badge>{session.status}</Badge>
-                    {session.status === 'Pending' || session.status === 'Confirmed' ? (
-                        <>
+                    {showActions && (session.status === 'Pending' || session.status === 'Confirmed') && (
+                        <div className="flex gap-2 mt-2">
                             <Button variant="outline" size="sm" onClick={() => toast.info("Reschedule feature coming soon.")}>
                                 <Edit size={14} className="mr-1" /> Reschedule
                             </Button>
                             <Button variant="destructive" size="sm" onClick={() => handleCancelSession(session.id)}>
                                 <XCircle size={14} className="mr-1" /> Cancel
                             </Button>
-                        </>
-                    ) : null}
+                        </div>
+                    )}
                 </div>
             </CardContent>
         </Card>
@@ -619,14 +681,25 @@ const StudentDashboard = () => {
       <>
         <h1 className="text-3xl font-bold mb-8">Notifications</h1>
         <Card>
-          <CardContent className="p-6 text-center text-muted-foreground">
-            You have no new notifications.
-          </CardContent>
+            <CardContent className="p-6">
+                <div className="space-y-4">
+                    {notifications.length > 0 ? notifications.map(notification => (
+                        <div key={notification.id} className="flex items-start gap-4 border-b pb-4 last:border-b-0 last:pb-0">
+                            {!notification.isRead && <div className="w-2.5 h-2.5 rounded-full mt-1.5 bg-primary flex-shrink-0" />}
+                            <div className={`flex-1 ${notification.isRead ? 'pl-6' : ''}`}>
+                                <p className="text-sm">{notification.message}</p>
+                                <p className="text-xs text-muted-foreground">{formatDistanceToNow(notification.timestamp.toDate(), { addSuffix: true })}</p>
+                            </div>
+                        </div>
+                    )) : (
+                        <p className="text-center text-muted-foreground py-8">You have no new notifications.</p>
+                    )}
+                </div>
+            </CardContent>
         </Card>
       </>
     );
   }
-  
 };
 
 export default StudentDashboard;
