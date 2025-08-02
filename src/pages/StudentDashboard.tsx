@@ -534,6 +534,10 @@ const StudentDashboard = () => {
                         <p className="font-bold text-lg text-slate-800">{session.advisorInfo.name} {session.advisorInfo.surname}</p>
                         <p className="text-xs text-slate-500">Ref: {session.referenceCode}</p>
                     </div>
+                    <div className="text-sm text-right">
+                        <p className="font-semibold text-slate-700">{format(session.sessionDateTime.toDate(), 'MMMM d, yyyy')}</p>
+                        <p className="text-slate-500">{format(session.sessionDateTime.toDate(), 'p')}</p>
+                    </div>
                 </div>
                 <div className="p-4">
                     <div className="flex justify-between items-end">
@@ -548,11 +552,7 @@ const StudentDashboard = () => {
                             <p><strong className="font-medium text-slate-600">Mode:</strong> {session.mode}</p>
                         </div>
                         <div className="text-right">
-                            <div className="text-sm">
-                                <p className="font-semibold text-slate-700">{format(session.sessionDateTime.toDate(), 'MMMM d, yyyy')}</p>
-                                <p className="text-slate-500">{format(session.sessionDateTime.toDate(), 'p')}</p>
-                            </div>
-                            <div className="flex items-center gap-2 mt-2">
+                            <div className="flex items-center gap-2 mt-4">
                                 <span className="text-sm font-medium text-slate-600">Status:</span>
                                 <div className={`py-1 px-3 rounded-full text-xs font-semibold border ${currentStatusStyle.bg} ${currentStatusStyle.text} ${currentStatusStyle.border}`}>
                                     {session.status}
