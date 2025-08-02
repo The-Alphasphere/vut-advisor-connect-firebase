@@ -11,8 +11,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Calendar, Plus, Eye, Search, Link as LinkIcon } from 'lucide-react';
-import { format, isWeekend, startOfDay, addDays, isSameDay } from 'date-fns';
+import { Calendar, Plus, Eye, Search, Link as LinkIcon, X } from 'lucide-react';
+import { format, isWeekend, startOfDay, addDays } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
@@ -303,7 +303,11 @@ const BookSessionDialog = ({ open, onOpenChange, onBookSession, advisors, booked
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
                         <CalendarComponent mode="single" selected={selectedDate} onSelect={setSelectedDate}
-                            disabled={(date) => isWeekend(date) || date < startOfDay(new Date())}
+                            disabled={(date) => {
+                                const today = startOfDay(new Date());
+                                const tenDaysFromNow = addDays(today, 10);
+                                return isWeekend(date) || date < today || date > tenDaysFromNow;
+                            }}
                             initialFocus
                         />
                     </PopoverContent>
@@ -345,6 +349,18 @@ const BookSessionDialog = ({ open, onOpenChange, onBookSession, advisors, booked
                         </div>
                     </PopoverContent>
                 </Popover>
+                {selectedReasons.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-2">
+                        {selectedReasons.map(reason => (
+                            <Badge key={reason} variant="secondary" className="flex items-center gap-1">
+                                {reason}
+                                <button onClick={() => handleReasonSelect(reason)} className="rounded-full hover:bg-background/50">
+                                    <X size={12}/>
+                                </button>
+                            </Badge>
+                        ))}
+                    </div>
+                )}
             </div>
             
             {selectedReasons.includes('Other') && (
