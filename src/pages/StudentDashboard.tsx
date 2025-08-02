@@ -102,55 +102,71 @@ const StudentDashboard = () => {
       return;
     }
 
-    setLoading(true);
-    
-    const userDocRef = doc(db, "users", user.uuid);
-    const unsubscribeUser = onSnapshot(userDocRef, (userDoc) => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        // Step 1: Fetch the student's document first
+        const userDocRef = doc(db, "users", user.uuid);
+        const userDoc = await getDoc(userDocRef);
+
         if (userDoc.exists()) {
-            const userData = userDoc.data();
-            setUserProfileState({
-                name: userData.Name || '',
-                surname: userData.Surname || '',
-                email: userData.email || '',
-                studentNumber: userData.studentNumber || 'N/A',
-                avatar: userData.profileURL || `https://placehold.co/100x100/0ea5e9/ffffff?text=${(userData.Name || 'U').charAt(0)}`,
-                course: userData.course || 'Course not set',
-                faculty: userData.faculty || 'Faculty not set'
-            });
+          const userData = userDoc.data();
+          // Temporarily store user data
+          const profileData = {
+              name: userData.Name || '',
+              surname: userData.Surname || '',
+              email: userData.email || '',
+              studentNumber: userData.studentNumber || 'N/A',
+              avatar: userData.profileURL || `https://placehold.co/100x100/0ea5e9/ffffff?text=${(userData.Name || 'U').charAt(0)}`,
+              course: userData.course || 'Course not set',
+              faculty: userData.faculty || 'Faculty not set'
+          };
+          
+          let advisorData = null;
+          // Step 2: If a primaryAdvisorId exists, fetch the advisor's document
+          if (userData.primaryAdvisorId) {
+              const advisorDocRef = doc(db, "users", userData.primaryAdvisorId);
+              const advisorDoc = await getDoc(advisorDocRef);
+              if (advisorDoc.exists()) {
+                  const ad = advisorDoc.data();
+                  advisorData = { 
+                      id: advisorDoc.id, 
+                      name: ad.Name || 'N/A', 
+                      surname: ad.Surname || '',
+                      email: ad.email || 'N/A',
+                      office: ad.office || 'N/A',
+                      faculty: ad.faculty || 'N/A'
+                  };
+              }
+          }
+          
+          // Step 3: Now that all data is fetched, update the state at once
+          setUserProfileState(profileData);
+          setPrimaryAdvisor(advisorData);
 
-            if (userData.primaryAdvisorId) {
-                const advisorDocRef = doc(db, "users", userData.primaryAdvisorId);
-                getDoc(advisorDocRef).then(advisorDoc => {
-                    if (advisorDoc.exists()) {
-                        const advisorData = advisorDoc.data();
-                        setPrimaryAdvisor({ 
-                            id: advisorDoc.id, 
-                            name: advisorData.Name || 'N/A', 
-                            surname: advisorData.Surname || '',
-                            email: advisorData.email || 'N/A',
-                            office: advisorData.office || 'N/A',
-                            faculty: advisorData.faculty || 'N/A'
-                        });
-                    }
-                });
-            }
-        } else {
-            setLoading(false);
         }
-    });
+      } catch (error) {
+        console.error("Error fetching initial data:", error);
+        toast.error("Could not load your dashboard data.");
+      } finally {
+        // Step 4: Stop loading, regardless of success or failure
+        setLoading(false);
+      }
+    };
 
+    fetchData();
+
+    // Set up real-time listeners for sessions and goals
     const sessionsQuery = query(collection(db, "sessions"), where("studentInfo.studentId", "==", user.uuid));
     const unsubscribeSessions = onSnapshot(sessionsQuery, (snapshot) => {
       const userSessions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Session));
       setSessions(userSessions);
-      setLoading(false);
     });
     
     const goalsQuery = query(collection(db, "users", user.uuid, "goals"));
     const unsubscribeGoals = onSnapshot(goalsQuery, (snapshot) => setGoals(snapshot.docs.map(doc => ({id: doc.id, ...doc.data() } as Goal))));
 
     return () => {
-      unsubscribeUser();
       unsubscribeSessions();
       unsubscribeGoals();
     };
