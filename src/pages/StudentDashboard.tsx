@@ -86,6 +86,8 @@ const StudentDashboard = () => {
   const [showBookingDialog, setShowBookingDialog] = useState(false);
   const [activeSessionTab, setActiveSessionTab] = useState('upcoming');
   const [showProfileModal, setShowProfileModal] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const SESSIONS_PER_PAGE = 3;
 
   const [userProfile, setUserProfileState] = useState({
       name: '',
@@ -461,6 +463,17 @@ const StudentDashboard = () => {
         if (tab === 'past') return pastSessions;
         return [];
     };
+
+    const sessionsToDisplay = sessionsForTab(activeSessionTab);
+    const totalPages = Math.ceil(sessionsToDisplay.length / SESSIONS_PER_PAGE);
+    const indexOfLastSession = currentPage * SESSIONS_PER_PAGE;
+    const indexOfFirstSession = indexOfLastSession - SESSIONS_PER_PAGE;
+    const currentSessions = sessionsToDisplay.slice(indexOfFirstSession, indexOfLastSession);
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [activeSessionTab]);
+
     return <>
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
             <h1 className="text-3xl font-bold">My Sessions</h1>
@@ -474,11 +487,22 @@ const StudentDashboard = () => {
             <TabButton title={`Past (${pastSessions.length})`} isActive={activeSessionTab === 'past'} onClick={() => setActiveSessionTab('past')} />
         </div>
         <div className="space-y-4">
-            {sessionsForTab(activeSessionTab).length > 0 ? 
-                sessionsForTab(activeSessionTab).map(s => <SessionCard key={s.id} session={s} />) :
+            {currentSessions.length > 0 ? 
+                currentSessions.map(s => <SessionCard key={s.id} session={s} />) :
                 <Card><CardContent className="p-6 text-center text-muted-foreground">No sessions in this category.</CardContent></Card>
             }
         </div>
+        {totalPages > 1 && (
+            <div className="flex justify-center items-center mt-6">
+                <Button onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1} variant="outline">
+                    <ChevronLeft size={16} className="mr-2" /> Previous
+                </Button>
+                <span className="mx-4 text-sm font-medium">Page {currentPage} of {totalPages}</span>
+                <Button onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages} variant="outline">
+                    Next <ChevronRight size={16} className="ml-2" />
+                </Button>
+            </div>
+        )}
     </>;
   }
   
@@ -513,23 +537,26 @@ const StudentDashboard = () => {
                         <p className="text-slate-500">{format(session.sessionDateTime.toDate(), 'p')}</p>
                     </div>
                 </div>
-                <div className="p-4">
-                    <div className="text-sm space-y-1 mb-4">
+                <div className="p-4 flex justify-between items-end">
+                    <div className="text-sm space-y-1">
                         <p><strong className="font-medium text-slate-600">Reason:</strong> {displayReasons}</p>
-                        <p><strong className="font-medium text-slate-600">Mode:</strong> {session.mode}</p>
                         <p><strong className="font-medium text-slate-600">Type:</strong> {session.sessionType} {isGroup && `(${session.groupMembers?.length || 0} members)`}</p>
+                        {isGroup && session.groupMembers && (
+                            <ul className="pl-5 list-disc text-xs text-slate-500">
+                                {session.groupMembers.map((member, index) => <li key={index}>{member.email}</li>)}
+                            </ul>
+                        )}
                     </div>
-
-                    <div className="flex justify-between items-center border-t pt-4">
-                        <div className="flex items-center gap-2">
+                    <div className="text-right">
+                        <p><strong className="font-medium text-slate-600">Mode:</strong> {session.mode}</p>
+                        <div className="flex items-center gap-2 mt-4">
                             <span className="text-sm font-medium text-slate-600">Status:</span>
                             <div className={`py-1 px-3 rounded-full text-sm font-semibold border ${currentStatusStyle.bg} ${currentStatusStyle.text} ${currentStatusStyle.border}`}>
                                 {session.status}
                             </div>
                         </div>
-                        
                         {(session.status === 'Pending' || session.status === 'Confirmed') && (
-                            <div className="flex gap-2">
+                            <div className="flex gap-2 mt-2">
                                 <Button className="bg-slate-600 hover:bg-slate-700 text-white" size="sm" onClick={() => toast.info("Reschedule feature coming soon.")}>
                                     Reschedule
                                 </Button>
