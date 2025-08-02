@@ -509,7 +509,7 @@ const StudentDashboard = () => {
                             </ResponsiveContainer>
                         </CardContent>
                     </Card>
-                  }    
+                    
                     <Card>
                         <CardHeader><CardTitle className="flex items-center gap-2"><TrendingUp size={20} /> Sessions Per Month</CardTitle></CardHeader>
                         <CardContent>
@@ -524,6 +524,7 @@ const StudentDashboard = () => {
                             </ResponsiveContainer>
                         </CardContent>
                     </Card>
+                  }
                 </div>
             </div>
         )}
