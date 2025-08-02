@@ -513,26 +513,23 @@ const StudentDashboard = () => {
                         <p className="text-slate-500">{format(session.sessionDateTime.toDate(), 'p')}</p>
                     </div>
                 </div>
-                <div className="p-4 flex justify-between items-end">
-                    <div className="text-sm space-y-1">
+                <div className="p-4">
+                    <div className="text-sm space-y-1 mb-4">
                         <p><strong className="font-medium text-slate-600">Reason:</strong> {displayReasons}</p>
-                        <p><strong className="font-medium text-slate-600">Type:</strong> {session.sessionType} {isGroup && `(${session.groupMembers?.length || 0} members)`}</p>
-                        {isGroup && session.groupMembers && (
-                            <ul className="pl-5 list-disc text-xs text-slate-500">
-                                {session.groupMembers.map((member, index) => <li key={index}>{member.email}</li>)}
-                            </ul>
-                        )}
-                    </div>
-                    <div className="text-right">
                         <p><strong className="font-medium text-slate-600">Mode:</strong> {session.mode}</p>
-                        <div className="flex items-center gap-2 mt-4">
+                        <p><strong className="font-medium text-slate-600">Type:</strong> {session.sessionType} {isGroup && `(${session.groupMembers?.length || 0} members)`}</p>
+                    </div>
+
+                    <div className="flex justify-between items-center border-t pt-4">
+                        <div className="flex items-center gap-2">
                             <span className="text-sm font-medium text-slate-600">Status:</span>
                             <div className={`py-1 px-3 rounded-full text-sm font-semibold border ${currentStatusStyle.bg} ${currentStatusStyle.text} ${currentStatusStyle.border}`}>
                                 {session.status}
                             </div>
                         </div>
+                        
                         {(session.status === 'Pending' || session.status === 'Confirmed') && (
-                            <div className="flex gap-2 mt-2">
+                            <div className="flex gap-2">
                                 <Button className="bg-slate-600 hover:bg-slate-700 text-white" size="sm" onClick={() => toast.info("Reschedule feature coming soon.")}>
                                     Reschedule
                                 </Button>
