@@ -112,12 +112,15 @@ const StudentDashboard = () => {
     }
 
     const fetchData = async () => {
+      setLoading(true);
       try {
+        // Step 1: Fetch the student's document first
         const userDocRef = doc(db, "users", user.uuid);
         const userDoc = await getDoc(userDocRef);
 
         if (userDoc.exists()) {
           const userData = userDoc.data();
+          // Temporarily store user data
           const profileData = {
               name: userData.Name || '',
               surname: userData.Surname || '',
@@ -129,6 +132,7 @@ const StudentDashboard = () => {
           };
           
           let advisorData = null;
+          // Step 2: If a primaryAdvisorId exists, fetch the advisor's document
           if (userData.primaryAdvisorId) {
               const advisorDocRef = doc(db, "users", userData.primaryAdvisorId);
               const advisorDoc = await getDoc(advisorDocRef);
@@ -145,19 +149,23 @@ const StudentDashboard = () => {
               }
           }
           
+          // Step 3: Now that all data is fetched, update the state at once
           setUserProfileState(profileData);
           setPrimaryAdvisor(advisorData);
+
         }
       } catch (error) {
         console.error("Error fetching initial data:", error);
         toast.error("Could not load your dashboard data.");
       } finally {
+        // Step 4: Stop loading, regardless of success or failure
         setLoading(false);
       }
     };
 
     fetchData();
 
+    // Set up real-time listeners for sessions and goals
     const sessionsQuery = query(collection(db, "sessions"), where("studentInfo.studentId", "==", user.uuid), orderBy("sessionDateTime", "desc"));
     const unsubscribeSessions = onSnapshot(sessionsQuery, (snapshot) => {
       const userSessions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Session));
@@ -501,7 +509,6 @@ const StudentDashboard = () => {
             {sessionsForTab(activeSessionTab).length > 0 ? 
                 sessionsForTab(activeSessionTab).map(s => <SessionCard key={s.id} session={s} />) :
                 <Card><CardContent className="p-6 text-center text-muted-foreground">No sessions in this category.</CardContent></Card>
-            }
         </div>
     </>;
   }
