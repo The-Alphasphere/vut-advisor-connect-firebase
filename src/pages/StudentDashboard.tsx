@@ -505,10 +505,14 @@ const StudentDashboard = () => {
             <CardContent className="p-5">
                 <div className="flex flex-col sm:flex-row justify-between gap-4">
                     <div className="flex-1">
-                        <div className="flex justify-between items-start mb-4 bg-blue-50 p-3 rounded-lg">
+                        <div className="flex justify-between items-start mb-4 bg-blue-50 p-3 rounded-lg -m-1">
                             <div>
                                 <p className="font-bold text-xl text-blue-900">{session.advisorInfo.name} {session.advisorInfo.surname}</p>
                                 <p className="text-xs text-slate-600">Ref: {session.referenceCode}</p>
+                            </div>
+                            <div className="text-sm text-right">
+                                <p className="font-semibold text-blue-800">{format(session.sessionDateTime.toDate(), 'MMMM d, yyyy')}</p>
+                                <p className="text-slate-600">{format(session.sessionDateTime.toDate(), 'p')}</p>
                             </div>
                         </div>
 
@@ -519,29 +523,20 @@ const StudentDashboard = () => {
                         </div>
                     </div>
                     <div className="flex flex-col items-start sm:items-end justify-between gap-2 sm:border-l sm:pl-4">
-                        <div className="text-sm text-right">
-                            <p className="font-semibold">{format(session.sessionDateTime.toDate(), 'MMMM d, yyyy')}</p>
-                            <p className="text-muted-foreground">{format(session.sessionDateTime.toDate(), 'p')}</p>
+                        <div className={`py-1 px-4 rounded-full text-sm font-semibold border ${currentStatusStyle.bg} ${currentStatusStyle.text} ${currentStatusStyle.border}`}>
+                           Status: {session.status}
                         </div>
-                        <div className="flex flex-col items-start sm:items-end gap-2 w-full mt-2">
-                            <div className="flex items-center gap-2">
-                                <span className="text-sm font-medium text-slate-600">Status:</span>
-                                <div className={`py-1 px-3 rounded-full text-sm font-semibold border ${currentStatusStyle.bg} ${currentStatusStyle.text} ${currentStatusStyle.border}`}>
-                                    {session.status}
-                                </div>
+                        
+                        {(session.status === 'Pending' || session.status === 'Confirmed') && (
+                            <div className="flex flex-col gap-2 mt-2 w-full">
+                                <Button className="bg-slate-600 hover:bg-slate-700 text-white" size="sm" onClick={() => toast.info("Reschedule feature coming soon.")}>
+                                    Reschedule
+                                </Button>
+                                <Button className="bg-amber-500 hover:bg-amber-600 text-white" size="sm" onClick={() => handleCancelSession(session.id)}>
+                                    Cancel
+                                </Button>
                             </div>
-                            
-                            {(session.status === 'Pending' || session.status === 'Confirmed') && (
-                                <div className="flex gap-2 mt-2">
-                                    <Button className="bg-slate-600 hover:bg-slate-700 text-white" size="sm" onClick={() => toast.info("Reschedule feature coming soon.")}>
-                                        Reschedule
-                                    </Button>
-                                    <Button className="bg-amber-500 hover:bg-amber-600 text-white" size="sm" onClick={() => handleCancelSession(session.id)}>
-                                        Cancel
-                                    </Button>
-                                </div>
-                            )}
-                        </div>
+                        )}
                     </div>
                 </div>
             </CardContent>
