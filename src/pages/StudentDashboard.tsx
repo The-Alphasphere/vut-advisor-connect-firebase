@@ -84,9 +84,7 @@ const StudentDashboard = () => {
   
   const [sessions, setSessions] = useState<Session[]>([]);
   const [primaryAdvisor, setPrimaryAdvisor] = useState<Advisor | null>(null);
-  const [goals, setGoals] = useState<Goal[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [newGoal, setNewGoal] = useState("");
   const [loading, setLoading] = useState(true);
   
   const [evaluationSession, setEvaluationSession] = useState<Session | null>(null);
@@ -166,9 +164,6 @@ const StudentDashboard = () => {
       setSessions(userSessions);
     });
     
-    const goalsQuery = query(collection(db, "users", user.uuid, "goals"));
-    const unsubscribeGoals = onSnapshot(goalsQuery, (snapshot) => setGoals(snapshot.docs.map(doc => ({id: doc.id, ...doc.data() } as Goal))));
-
     const notificationsQuery = query(collection(db, "notifications"), where("userId", "==", user.uuid), orderBy("timestamp", "desc"));
     const unsubscribeNotifications = onSnapshot(notificationsQuery, (snapshot) => {
         const userNotifications = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Notification));
@@ -177,7 +172,6 @@ const StudentDashboard = () => {
 
     return () => {
       unsubscribeSessions();
-      unsubscribeGoals();
       unsubscribeNotifications();
     };
   }, [user?.uuid]);
@@ -290,22 +284,6 @@ const StudentDashboard = () => {
         }
     }
   };
-
-  const addGoal = async () => {
-    if (newGoal.trim() === "" || !user) return;
-    await addDoc(collection(db, "users", user.uuid, "goals"), { text: newGoal, completed: false, createdAt: serverTimestamp() });
-    setNewGoal("");
-  };
-
-  const toggleGoal = async (id: string, completed: boolean) => {
-    if (!user) return;
-    await updateDoc(doc(db, "users", user.uuid, "goals", id), { completed: !completed });
-  };
-  
-  const deleteGoal = async (id: string) => {
-    if (!user) return;
-    await deleteDoc(doc(db, "users", user.uuid, "goals", id));
-  };
   
   const handleAvatarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -400,7 +378,6 @@ const StudentDashboard = () => {
                     <SidebarItem icon={<BarChart2 size={20} />} text="My Journey" isActive={activeSection === 'analytics'} onClick={() => setActiveSection('analytics')} />
                     <SidebarItem icon={<User size={20} />} text="My Advisor" isActive={activeSection === 'my-advisor'} onClick={() => setActiveSection('my-advisor')} />
                     <SidebarItem icon={<LinkIcon size={20} />} text="Resource Hub" isActive={activeSection === 'resource-hub'} onClick={() => setActiveSection('resource-hub')} />
-                    <SidebarItem icon={<Flag size={20} />} text="Goal Tracker" isActive={activeSection === 'goal-tracker'} onClick={() => setActiveSection('goal-tracker')} />
                     <SidebarItem icon={<Bell size={20} />} text="Notifications" isActive={activeSection === 'notifications'} onClick={() => setActiveSection('notifications')} />
                 </ul>
             </nav>
@@ -461,7 +438,13 @@ const StudentDashboard = () => {
                     <CardContent>
                         <div className="space-y-3">
                             {recentSessions.length > 0 ? recentSessions.map(session => (
-                                <SessionCard key={session.id} session={session} showActions={false} />
+                                <div key={session.id} className="flex justify-between items-center p-2 rounded-lg">
+                                    <div className="bg-blue-50 p-2 rounded-md text-left flex-1">
+                                        <p className="font-semibold text-blue-800">{session.advisorInfo.name} {session.advisorInfo.surname}</p>
+                                        <p className="text-sm text-muted-foreground">{format(session.sessionDateTime.toDate(), 'PPP, p')}</p>
+                                    </div>
+                                    <Badge className="ml-4">{session.status}</Badge>
+                                </div>
                             )) : (
                                 <p className="text-center text-muted-foreground py-4">No upcoming sessions</p>
                             )}
@@ -498,7 +481,7 @@ const StudentDashboard = () => {
         </div>
         <div className="space-y-4">
             {sessionsForTab(activeSessionTab).length > 0 ? 
-                sessionsForTab(activeSessionTab).map(s => <SessionCard key={s.id} session={s} showActions={true} />) :
+                sessionsForTab(activeSessionTab).map(s => <SessionCard key={s.id} session={s} />) :
                 <Card><CardContent className="p-6 text-center text-muted-foreground">No sessions in this category.</CardContent></Card>
             }
         </div>
@@ -509,7 +492,7 @@ const StudentDashboard = () => {
     return <button onClick={onClick} className={`py-2 px-4 text-sm font-medium ${isActive ? 'border-b-2 border-primary text-primary' : 'text-muted-foreground'}`}>{title}</button>
   }
   
-  function SessionCard({ session, showActions }: { session: Session, showActions: boolean }) { 
+  function SessionCard({ session }: { session: Session }) { 
     const isGroup = session.sessionType === 'Group';
     const displayReasons = session.reasons.map(r => r === 'Other' ? session.otherReason || 'Other' : r).join(', ');
 
@@ -534,7 +517,7 @@ const StudentDashboard = () => {
                     </div>
                     <div className="flex flex-col items-start sm:items-end gap-2 w-full">
                         <Badge>{session.status}</Badge>
-                        {showActions && (session.status === 'Pending' || session.status === 'Confirmed') && (
+                        {(session.status === 'Pending' || session.status === 'Confirmed') && (
                             <div className="flex gap-2 mt-2">
                                 <Button variant="outline" size="sm" onClick={() => toast.info("Reschedule feature coming soon.")}>
                                     <Edit size={14} className="mr-1" /> Reschedule
@@ -609,13 +592,21 @@ const StudentDashboard = () => {
        <>
          <h1 className="text-3xl font-bold mb-8">My Advisor</h1>
          <Card>
-           <CardHeader>
-             <CardTitle>{primaryAdvisor.name} {primaryAdvisor.surname}</CardTitle>
-           </CardHeader>
-           <CardContent>
-             <p><strong>Email:</strong> {primaryAdvisor.email}</p>
-             <p><strong>Office:</strong> {primaryAdvisor.office}</p>
-           </CardContent>
+            <CardContent className="p-6 flex items-center gap-6">
+                <img 
+                    src={`https://placehold.co/100x100/1e40af/ffffff?text=${(primaryAdvisor.name || 'A').charAt(0)}`} 
+                    alt="Advisor Avatar" 
+                    className="w-24 h-24 rounded-full border-4 border-primary/20"
+                />
+                <div>
+                    <h2 className="text-2xl font-bold">{primaryAdvisor.name} {primaryAdvisor.surname}</h2>
+                    <p className="text-muted-foreground">{primaryAdvisor.faculty}</p>
+                    <div className="mt-4 space-y-2">
+                        <p><strong>Email:</strong> {primaryAdvisor.email}</p>
+                        <p><strong>Office:</strong> {primaryAdvisor.office}</p>
+                    </div>
+                </div>
+            </CardContent>
          </Card>
        </>
      );
