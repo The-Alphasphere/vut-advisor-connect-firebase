@@ -501,7 +501,6 @@ const StudentDashboard = () => {
             {sessionsForTab(activeSessionTab).length > 0 ? 
                 sessionsForTab(activeSessionTab).map(s => <SessionCard key={s.id} session={s} showActions={true} />) :
                 <Card><CardContent className="p-6 text-center text-muted-foreground">No sessions in this category.</CardContent></Card>
-            }
         </div>
     </>;
   }
@@ -517,33 +516,35 @@ const StudentDashboard = () => {
     return (
         <Card>
             <CardContent className="p-4 flex flex-col sm:flex-row justify-between gap-4">
-                <div className="flex-1 space-y-2">
+                <div className="flex-1 space-y-3">
                     <div>
-                        <p className="font-semibold">{session.advisorInfo.name} {session.advisorInfo.surname}</p>
-                        <p className="text-xs text-muted-foreground">{session.referenceCode}</p>
+                        <p className="font-semibold text-lg">{session.advisorInfo.name} {session.advisorInfo.surname}</p>
+                        <p className="text-xs text-muted-foreground">Ref: {session.referenceCode}</p>
                     </div>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Calendar size={14} />
-                        <span>{format(session.sessionDateTime.toDate(), 'PPP, p')}</span>
-                    </div>
-                    <div className="pt-1">
-                        <p className="text-sm"><strong className="font-medium">Reason:</strong> {displayReasons}</p>
-                        <p className="text-sm"><strong className="font-medium">Type:</strong> {session.sessionType} {isGroup && `(${session.groupMembers?.length || 0} members)`}</p>
-                        <p className="text-sm"><strong className="font-medium">Mode:</strong> {session.mode}</p>
+                    <div className="text-sm space-y-1">
+                        <p><strong className="font-medium">Reason:</strong> {displayReasons}</p>
+                        <p><strong className="font-medium">Type:</strong> {session.sessionType} {isGroup && `(${session.groupMembers?.length || 0} members)`}</p>
+                        <p><strong className="font-medium">Mode:</strong> {session.mode}</p>
                     </div>
                 </div>
-                <div className="flex flex-col items-start sm:items-end gap-2">
-                    <Badge>{session.status}</Badge>
-                    {showActions && (session.status === 'Pending' || session.status === 'Confirmed') && (
-                        <div className="flex gap-2 mt-2">
-                            <Button variant="outline" size="sm" onClick={() => toast.info("Reschedule feature coming soon.")}>
-                                <Edit size={14} className="mr-1" /> Reschedule
-                            </Button>
-                            <Button variant="destructive" size="sm" onClick={() => handleCancelSession(session.id)}>
-                                <XCircle size={14} className="mr-1" /> Cancel
-                            </Button>
-                        </div>
-                    )}
+                <div className="flex flex-col items-start sm:items-end justify-between gap-2">
+                    <div className="text-sm text-right bg-blue-50 p-2 rounded-md">
+                        <p className="font-semibold text-blue-800">{format(session.sessionDateTime.toDate(), 'MMMM d, yyyy')}</p>
+                        <p className="text-muted-foreground">{format(session.sessionDateTime.toDate(), 'p')}</p>
+                    </div>
+                    <div className="flex flex-col items-start sm:items-end gap-2 w-full">
+                        <Badge>{session.status}</Badge>
+                        {showActions && (session.status === 'Pending' || session.status === 'Confirmed') && (
+                            <div className="flex gap-2 mt-2">
+                                <Button variant="outline" size="sm" onClick={() => toast.info("Reschedule feature coming soon.")}>
+                                    <Edit size={14} className="mr-1" /> Reschedule
+                                </Button>
+                                <Button variant="destructive" size="sm" onClick={() => handleCancelSession(session.id)}>
+                                    <XCircle size={14} className="mr-1" /> Cancel
+                                </Button>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </CardContent>
         </Card>
