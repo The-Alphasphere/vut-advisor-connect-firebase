@@ -96,7 +96,7 @@ const Login = () => {
                     <Input id="email" type="email" value={formData.email} onChange={e => setFormData({
                   ...formData,
                   email: e.target.value
-                })} placeholder="your.email@vut.ac.za" required />
+                })} placeholder="studentnumber@vut.ac.za" required />
                 </div>
 
                 <div>
@@ -105,7 +105,7 @@ const Login = () => {
                         <Input id="password" type={showPassword ? "text" : "password"} value={formData.password} onChange={e => setFormData({
                     ...formData,
                     password: e.target.value
-                  })} required className="pr-10" />
+                  })} placeholder="Enter your password" required className="pr-10" />
                         <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600">
                             {showPassword ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
                         </button>
