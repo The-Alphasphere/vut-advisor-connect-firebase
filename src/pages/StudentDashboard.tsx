@@ -491,9 +491,9 @@ const StudentDashboard = () => {
     const displayReasons = session.reasons.map(r => r === 'Other' ? session.otherReason || 'Other' : r).join(', ');
 
     const statusStyles: { [key: string]: { bg: string, text: string, border: string } } = {
-        Pending: { bg: 'bg-orange-100', text: 'text-orange-800', border: 'border-orange-300' },
-        Confirmed: { bg: 'bg-amber-100', text: 'text-amber-800', border: 'border-amber-300' },
-        Completed: { bg: 'bg-blue-100', text: 'text-blue-800', border: 'border-blue-300' },
+        Pending: { bg: 'bg-yellow-100', text: 'text-yellow-800', border: 'border-yellow-300' },
+        Confirmed: { bg: 'bg-sky-100', text: 'text-sky-800', border: 'border-sky-300' },
+        Completed: { bg: 'bg-green-100', text: 'text-green-800', border: 'border-green-300' },
         Cancelled: { bg: 'bg-red-100', text: 'text-red-800', border: 'border-red-300' },
         'To Complete': { bg: 'bg-purple-100', text: 'text-purple-800', border: 'border-purple-300' },
     };
@@ -502,46 +502,42 @@ const StudentDashboard = () => {
 
     return (
         <Card>
-            <CardContent className="p-5">
-                <div className="flex flex-col sm:flex-row justify-between gap-4">
-                    <div className="flex-1">
-                        <div className="flex justify-between items-start mb-4 bg-blue-50 p-3 rounded-lg">
-                            <div>
-                                <p className="font-bold text-xl text-blue-900">{session.advisorInfo.name} {session.advisorInfo.surname}</p>
-                                <p className="text-xs text-slate-600">Ref: {session.referenceCode}</p>
-                            </div>
-                        </div>
-
-                        <div className="text-sm space-y-1 mb-4">
-                            <p><strong className="font-medium text-slate-600">Reason:</strong> {displayReasons}</p>
-                            <p><strong className="font-medium text-slate-600">Mode:</strong> {session.mode}</p>
-                            <p><strong className="font-medium text-slate-600">Type:</strong> {session.sessionType} {isGroup && `(${session.groupMembers?.length || 0} members)`}</p>
-                        </div>
+            <CardContent className="p-0">
+                <div className="p-4 bg-slate-50 rounded-t-lg flex justify-between items-start">
+                    <div>
+                        <p className="font-bold text-lg text-slate-800">{session.advisorInfo.name} {session.advisorInfo.surname}</p>
+                        <p className="text-xs text-slate-500">Ref: {session.referenceCode}</p>
                     </div>
-                    <div className="flex flex-col items-start sm:items-end justify-between gap-2 sm:border-l sm:pl-4">
-                        <div className="text-sm text-right">
-                            <p className="font-semibold">{format(session.sessionDateTime.toDate(), 'MMMM d, yyyy')}</p>
-                            <p className="text-muted-foreground">{format(session.sessionDateTime.toDate(), 'p')}</p>
-                        </div>
-                        <div className="flex flex-col items-start sm:items-end gap-2 w-full mt-2">
-                            <div className="flex items-center gap-2">
-                                <span className="text-sm font-medium text-slate-600">Status:</span>
-                                <div className={`py-1 px-3 rounded-full text-sm font-semibold border ${currentStatusStyle.bg} ${currentStatusStyle.text} ${currentStatusStyle.border}`}>
-                                    {session.status}
-                                </div>
+                    <div className="text-sm text-right">
+                        <p className="font-semibold text-slate-700">{format(session.sessionDateTime.toDate(), 'MMMM d, yyyy')}</p>
+                        <p className="text-slate-500">{format(session.sessionDateTime.toDate(), 'p')}</p>
+                    </div>
+                </div>
+                <div className="p-4">
+                    <div className="text-sm space-y-1 mb-4">
+                        <p><strong className="font-medium text-slate-600">Reason:</strong> {displayReasons}</p>
+                        <p><strong className="font-medium text-slate-600">Mode:</strong> {session.mode}</p>
+                        <p><strong className="font-medium text-slate-600">Type:</strong> {session.sessionType} {isGroup && `(${session.groupMembers?.length || 0} members)`}</p>
+                    </div>
+
+                    <div className="flex justify-between items-center border-t pt-4">
+                        <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium text-slate-600">Status:</span>
+                            <div className={`py-1 px-3 rounded-full text-sm font-semibold border ${currentStatusStyle.bg} ${currentStatusStyle.text} ${currentStatusStyle.border}`}>
+                                {session.status}
                             </div>
-                            
-                            {(session.status === 'Pending' || session.status === 'Confirmed') && (
-                                <div className="flex gap-2 mt-2">
-                                    <Button className="bg-slate-600 hover:bg-slate-700 text-white" size="sm" onClick={() => toast.info("Reschedule feature coming soon.")}>
-                                        Reschedule
-                                    </Button>
-                                    <Button className="bg-amber-500 hover:bg-amber-600 text-white" size="sm" onClick={() => handleCancelSession(session.id)}>
-                                        Cancel
-                                    </Button>
-                                </div>
-                            )}
                         </div>
+                        
+                        {(session.status === 'Pending' || session.status === 'Confirmed') && (
+                            <div className="flex gap-2">
+                                <Button className="bg-slate-600 hover:bg-slate-700 text-white" size="sm" onClick={() => toast.info("Reschedule feature coming soon.")}>
+                                    Reschedule
+                                </Button>
+                                <Button className="bg-amber-500 hover:bg-amber-600 text-white" size="sm" onClick={() => handleCancelSession(session.id)}>
+                                    Cancel
+                                </Button>
+                            </div>
+                        )}
                     </div>
                 </div>
             </CardContent>
