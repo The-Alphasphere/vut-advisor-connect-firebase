@@ -477,7 +477,6 @@ const StudentDashboard = () => {
             {sessionsForTab(activeSessionTab).length > 0 ? 
                 sessionsForTab(activeSessionTab).map(s => <SessionCard key={s.id} session={s} />) :
                 <Card><CardContent className="p-6 text-center text-muted-foreground">No sessions in this category.</CardContent></Card>
-            }
         </div>
     </>;
   }
@@ -524,7 +523,7 @@ const StudentDashboard = () => {
                     </div>
                     <div className="flex flex-col items-start sm:items-end justify-between gap-2 sm:border-l sm:pl-4">
                         <div className={`py-1 px-4 rounded-full text-sm font-semibold border ${currentStatusStyle.bg} ${currentStatusStyle.text} ${currentStatusStyle.border}`}>
-                            {session.status}
+                           Status: {session.status}
                         </div>
                         
                         {(session.status === 'Pending' || session.status === 'Confirmed') && (
