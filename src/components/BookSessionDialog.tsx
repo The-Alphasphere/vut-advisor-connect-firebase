@@ -40,7 +40,7 @@ interface BookSessionDialogProps {
   bookedSlots: string[];
 }
 
-const BookSessionDialog = ({ open, onOpenChange, onBookSession }: BookSessionDialogProps) => {
+const BookSessionDialog = ({ open, onOpenChange, onBookSession, advisors, bookedSlots }: BookSessionDialogProps) => {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [selectedTime, setSelectedTime] = useState('');
   const [sessionType, setSessionType] = useState('individual');
