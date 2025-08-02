@@ -432,10 +432,10 @@ const StudentDashboard = () => {
                     <CardContent>
                         <div className="space-y-2">
                             {recentSessions.length > 0 ? recentSessions.map(session => (
-                                <div key={session.id} className="flex justify-between items-center p-2 rounded-lg bg-slate-50">
-                                    <div className="text-left">
-                                        <p className="font-semibold text-slate-800">{session.advisorInfo.name} {session.advisorInfo.surname}</p>
-                                        <p className="text-sm text-muted-foreground">{format(session.sessionDateTime.toDate(), 'PPP, p')}</p>
+                                <div key={session.id} className="flex justify-between items-center p-3 rounded-lg bg-blue-50">
+                                    <div>
+                                        <p className="font-semibold text-blue-900">{session.advisorInfo.name} {session.advisorInfo.surname}</p>
+                                        <p className="text-sm text-slate-600">{format(session.sessionDateTime.toDate(), 'PPP, p')}</p>
                                     </div>
                                     <Badge className="ml-4">{session.status}</Badge>
                                 </div>
@@ -504,12 +504,12 @@ const StudentDashboard = () => {
         <Card>
             <CardContent className="p-5 flex flex-col sm:flex-row justify-between gap-4">
                 <div className="flex-1">
-                    <div className="flex justify-between items-start mb-4">
+                    <div className="flex justify-between items-start mb-4 bg-blue-50 p-3 rounded-lg">
                         <div>
-                            <p className="font-bold text-xl text-slate-800">{session.advisorInfo.name} {session.advisorInfo.surname}</p>
-                            <p className="text-xs text-muted-foreground">Ref: {session.referenceCode}</p>
+                            <p className="font-bold text-xl text-blue-900">{session.advisorInfo.name} {session.advisorInfo.surname}</p>
+                            <p className="text-xs text-slate-600">Ref: {session.referenceCode}</p>
                         </div>
-                        <div className="text-sm text-right bg-blue-50 py-2 px-3 rounded-md">
+                        <div className="text-sm text-right">
                             <p className="font-semibold text-blue-800">{format(session.sessionDateTime.toDate(), 'MMMM d, yyyy')}</p>
                             <p className="text-slate-600">{format(session.sessionDateTime.toDate(), 'p')}</p>
                         </div>
