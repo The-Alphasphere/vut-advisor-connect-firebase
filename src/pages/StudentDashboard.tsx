@@ -119,8 +119,8 @@ const StudentDashboard = () => {
         if (userDoc.exists()) {
           const userData = userDoc.data();
           const profileData = {
-              name: userData.Name || '',
-              surname: userData.Surname || '',
+              name: userData.name || '',
+              surname: userData.surname || '',
               email: userData.email || '',
               studentNumber: userData.studentNumber || 'N/A',
               avatar: userData.profileURL || `https://placehold.co/100x100/0ea5e9/ffffff?text=${(userData.Name || 'U').charAt(0)}`,
@@ -136,8 +136,8 @@ const StudentDashboard = () => {
                   const ad = advisorDoc.data();
                   advisorData = { 
                       id: advisorDoc.id, 
-                      name: ad.Name || 'N/A', 
-                      surname: ad.Surname || '',
+                      name: ad.name || 'N/A', 
+                      surname: ad.surname || '',
                       email: ad.email || 'N/A',
                       office: ad.office || 'N/A',
                       faculty: ad.faculty || 'N/A'
@@ -364,7 +364,6 @@ const StudentDashboard = () => {
       case 'resource-hub': return <ResourceHubSection />;
       case 'goal-tracker': return <GoalTrackerSection />;
       case 'notifications': return <NotificationsSection />;
-      case 'settings': return <SettingsSection />;
       default: return <MainDashboardView />;
     }
   }
@@ -677,19 +676,6 @@ const StudentDashboard = () => {
           <CardContent className="p-6 text-center text-muted-foreground">
             You have no new notifications.
           </CardContent>
-        </Card>
-      </>
-    );
-  }
-
-  function SettingsSection() {
-    return (
-      <>
-        <h1 className="text-3xl font-bold mb-8">Settings</h1>
-        <Card>
-            <CardContent className="p-6 text-center text-muted-foreground">
-                Settings page coming soon.
-            </CardContent>
         </Card>
       </>
     );
