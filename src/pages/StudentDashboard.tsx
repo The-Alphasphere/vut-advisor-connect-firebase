@@ -2,14 +2,14 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { db } from '@/lib/firebase';
-import { collection, query, where, onSnapshot, addDoc, serverTimestamp, updateDoc, doc, getDoc, deleteDoc, orderBy } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, addDoc, serverTimestamp, updateDoc, doc, getDoc, deleteDoc } from 'firebase/firestore';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Home, BarChart2, Bell, Settings, User, Calendar, Clock, ChevronLeft, Download, Plus, LogOut, Camera, Link as LinkIcon, Flag, CheckSquare, Square, Trash2, TrendingUp, Target, Lightbulb, Users, Edit, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
-import { format, formatDistanceToNow } from 'date-fns';
+import { format } from 'date-fns';
 import StudentSessionEvaluation from '@/components/StudentSessionEvaluation';
 import BookSessionDialog from '@/components/BookSessionDialog';
 import LogoutConfirmation from '@/components/LogoutConfirmation';
@@ -67,14 +67,6 @@ interface Advisor {
     faculty: string;
 }
 
-interface Notification {
-    id: string;
-    userId: string;
-    message: string;
-    timestamp: { toDate: () => Date };
-    isRead: boolean;
-}
-
 const StudentDashboard = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -84,7 +76,6 @@ const StudentDashboard = () => {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [primaryAdvisor, setPrimaryAdvisor] = useState<Advisor | null>(null);
   const [goals, setGoals] = useState<Goal[]>([]);
-  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [newGoal, setNewGoal] = useState("");
   const [loading, setLoading] = useState(true);
   
@@ -111,80 +102,57 @@ const StudentDashboard = () => {
       return;
     }
 
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        // Step 1: Fetch the student's document first
-        const userDocRef = doc(db, "users", user.uuid);
-        const userDoc = await getDoc(userDocRef);
-
+    setLoading(true);
+    
+    const userDocRef = doc(db, "users", user.uuid);
+    const unsubscribeUser = onSnapshot(userDocRef, (userDoc) => {
         if (userDoc.exists()) {
-          const userData = userDoc.data();
-          // Temporarily store user data
-          const profileData = {
-              name: userData.Name || '',
-              surname: userData.Surname || '',
-              email: userData.email || '',
-              studentNumber: userData.studentNumber || 'N/A',
-              avatar: userData.profileURL || `https://placehold.co/100x100/0ea5e9/ffffff?text=${(userData.Name || 'U').charAt(0)}`,
-              course: userData.course || 'Course not set',
-              faculty: userData.faculty || 'Faculty not set'
-          };
-          
-          let advisorData = null;
-          // Step 2: If a primaryAdvisorId exists, fetch the advisor's document
-          if (userData.primaryAdvisorId) {
-              const advisorDocRef = doc(db, "users", userData.primaryAdvisorId);
-              const advisorDoc = await getDoc(advisorDocRef);
-              if (advisorDoc.exists()) {
-                  const ad = advisorDoc.data();
-                  advisorData = { 
-                      id: advisorDoc.id, 
-                      name: ad.Name || 'N/A', 
-                      surname: ad.Surname || '',
-                      email: ad.email || 'N/A',
-                      office: ad.office || 'N/A',
-                      faculty: ad.faculty || 'N/A'
-                  };
-              }
-          }
-          
-          // Step 3: Now that all data is fetched, update the state at once
-          setUserProfileState(profileData);
-          setPrimaryAdvisor(advisorData);
+            const userData = userDoc.data();
+            setUserProfileState({
+                name: userData.Name || '',
+                surname: userData.Surname || '',
+                email: userData.email || '',
+                studentNumber: userData.studentNumber || 'N/A',
+                avatar: userData.profileURL || `https://placehold.co/100x100/0ea5e9/ffffff?text=${(userData.Name || 'U').charAt(0)}`,
+                course: userData.course || 'Course not set',
+                faculty: userData.faculty || 'Faculty not set'
+            });
 
+            if (userData.primaryAdvisorId) {
+                const advisorDocRef = doc(db, "users", userData.primaryAdvisorId);
+                getDoc(advisorDocRef).then(advisorDoc => {
+                    if (advisorDoc.exists()) {
+                        const advisorData = advisorDoc.data();
+                        setPrimaryAdvisor({ 
+                            id: advisorDoc.id, 
+                            name: advisorData.Name || 'N/A', 
+                            surname: advisorData.Surname || '',
+                            email: advisorData.email || 'N/A',
+                            office: advisorData.office || 'N/A',
+                            faculty: advisorData.faculty || 'N/A'
+                        });
+                    }
+                });
+            }
+        } else {
+            setLoading(false);
         }
-      } catch (error) {
-        console.error("Error fetching initial data:", error);
-        toast.error("Could not load your dashboard data.");
-      } finally {
-        // Step 4: Stop loading, regardless of success or failure
-        setLoading(false);
-      }
-    };
+    });
 
-    fetchData();
-
-    // Set up real-time listeners for sessions and goals
-    const sessionsQuery = query(collection(db, "sessions"), where("studentInfo.studentId", "==", user.uuid), orderBy("sessionDateTime", "desc"));
+    const sessionsQuery = query(collection(db, "sessions"), where("studentInfo.studentId", "==", user.uuid));
     const unsubscribeSessions = onSnapshot(sessionsQuery, (snapshot) => {
       const userSessions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Session));
       setSessions(userSessions);
+      setLoading(false);
     });
     
     const goalsQuery = query(collection(db, "users", user.uuid, "goals"));
     const unsubscribeGoals = onSnapshot(goalsQuery, (snapshot) => setGoals(snapshot.docs.map(doc => ({id: doc.id, ...doc.data() } as Goal))));
 
-    const notificationsQuery = query(collection(db, "notifications"), where("userId", "==", user.uuid), orderBy("timestamp", "desc"));
-    const unsubscribeNotifications = onSnapshot(notificationsQuery, (snapshot) => {
-        const userNotifications = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Notification));
-        setNotifications(userNotifications);
-    });
-
     return () => {
+      unsubscribeUser();
       unsubscribeSessions();
       unsubscribeGoals();
-      unsubscribeNotifications();
     };
   }, [user?.uuid]);
   
@@ -258,25 +226,8 @@ const StudentDashboard = () => {
             createdAt: serverTimestamp(),
         };
 
-        const sessionDocRef = await addDoc(collection(db, "sessions"), newSession);
+        await addDoc(collection(db, "sessions"), newSession);
         toast.success("Session booked successfully!");
-        
-        // Create notifications for student and advisor
-        const notificationMessage = `New session booked with ${primaryAdvisor.name} ${primaryAdvisor.surname} on ${format(sessionDateTime, 'PPP')}.`;
-        await addDoc(collection(db, "notifications"), {
-            userId: user.uuid,
-            message: notificationMessage,
-            timestamp: serverTimestamp(),
-            isRead: false
-        });
-
-        await addDoc(collection(db, "notifications"), {
-            userId: primaryAdvisor.id,
-            message: `New session booked by ${userProfile.name} ${userProfile.surname} on ${format(sessionDateTime, 'PPP')}.`,
-            timestamp: serverTimestamp(),
-            isRead: false
-        });
-
         setShowBookingDialog(false);
 
     } catch (error) {
@@ -286,6 +237,7 @@ const StudentDashboard = () => {
   };
 
   const handleCancelSession = async (sessionId: string) => {
+    // Replace window.confirm with a custom modal in a real app
     if(window.confirm("Are you sure you want to cancel this session? This action cannot be undone.")) {
         const sessionRef = doc(db, "sessions", sessionId);
         try {
@@ -372,7 +324,6 @@ const StudentDashboard = () => {
       case 'resource-hub': return <ResourceHubSection />;
       case 'goal-tracker': return <GoalTrackerSection />;
       case 'notifications': return <NotificationsSection />;
-      case 'settings': return <SettingsSection />;
       default: return <MainDashboardView />;
     }
   }
@@ -431,7 +382,6 @@ const StudentDashboard = () => {
   
   function MainDashboardView() {
     const recentSessions = upcomingSessions.slice(0, 3);
-    const recentNotifications = notifications.slice(0, 3);
     return (
         <>
             <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
@@ -448,21 +398,7 @@ const StudentDashboard = () => {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <Card>
                     <CardHeader><CardTitle className="flex items-center gap-2"><Bell size={20} /> Recent Notifications</CardTitle></CardHeader>
-                    <CardContent>
-                        <div className="space-y-3">
-                            {recentNotifications.length > 0 ? recentNotifications.map(notification => (
-                                <div key={notification.id} className="flex items-start gap-3 p-3 rounded-lg hover:bg-accent">
-                                    <div className="w-2 h-2 rounded-full mt-2 bg-primary flex-shrink-0" />
-                                    <div className="flex-1">
-                                        <p className="text-sm">{notification.message}</p>
-                                        <p className="text-xs text-muted-foreground">{formatDistanceToNow(notification.timestamp.toDate(), { addSuffix: true })}</p>
-                                    </div>
-                                </div>
-                            )) : (
-                                <p className="text-center text-muted-foreground py-4">No new notifications.</p>
-                            )}
-                        </div>
-                    </CardContent>
+                    <CardContent><p className="text-center text-muted-foreground py-4">No new notifications.</p></CardContent>
                 </Card>
 
                 <Card>
@@ -686,19 +622,6 @@ const StudentDashboard = () => {
           <CardContent className="p-6 text-center text-muted-foreground">
             You have no new notifications.
           </CardContent>
-        </Card>
-      </>
-    );
-  }
-
-  function SettingsSection() {
-    return (
-      <>
-        <h1 className="text-3xl font-bold mb-8">Settings</h1>
-        <Card>
-            <CardContent className="p-6 text-center text-muted-foreground">
-                Settings page coming soon.
-            </CardContent>
         </Card>
       </>
     );
