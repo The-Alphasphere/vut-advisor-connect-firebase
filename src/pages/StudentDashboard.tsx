@@ -324,7 +324,6 @@ const StudentDashboard = () => {
       case 'resource-hub': return <ResourceHubSection />;
       case 'goal-tracker': return <GoalTrackerSection />;
       case 'notifications': return <NotificationsSection />;
-      case 'settings': return <SettingsSection />;
       default: return <MainDashboardView />;
     }
   }
@@ -623,6 +622,19 @@ const StudentDashboard = () => {
           <CardContent className="p-6 text-center text-muted-foreground">
             You have no new notifications.
           </CardContent>
+        </Card>
+      </>
+    );
+  }
+
+  function SettingsSection() {
+    return (
+      <>
+        <h1 className="text-3xl font-bold mb-8">Settings</h1>
+        <Card>
+            <CardContent className="p-6 text-center text-muted-foreground">
+                Settings page coming soon.
+            </CardContent>
         </Card>
       </>
     );
