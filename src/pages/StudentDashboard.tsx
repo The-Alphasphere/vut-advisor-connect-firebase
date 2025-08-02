@@ -48,6 +48,7 @@ interface Session {
   reasons: string[];
   otherReason?: string;
   mode: 'In-person' | 'Online';
+  meetLink?: string;
   groupMembers?: { name: string; surname: string; email: string }[];
   referenceCode: string;
   createdAt: any;
@@ -206,7 +207,7 @@ const StudentDashboard = () => {
     }
 
     try {
-        const { selectedDate, selectedTime, selectedReasons, otherReasonText, mode, sessionType, groupMembers } = sessionData;
+        const { selectedDate, selectedTime, selectedReasons, otherReasonText, mode, sessionType, groupMembers, meetLink } = sessionData;
 
         const sessionDateTime = new Date(selectedDate);
         const [startHour, startMinute] = selectedTime.split(' - ')[0].split(':');
@@ -237,12 +238,13 @@ const StudentDashboard = () => {
             reasons: selectedReasons,
             otherReason: otherReasonText || '',
             mode: mode === 'in-person' ? 'In-person' : 'Online',
+            meetLink: meetLink || '',
             groupMembers: groupMembers || [],
             referenceCode: `VUT-${Date.now().toString().slice(-6)}`,
             createdAt: serverTimestamp(),
         };
 
-        const sessionDocRef = await addDoc(collection(db, "sessions"), newSession);
+        await addDoc(collection(db, "sessions"), newSession);
         
         const notificationMessage = `New session booked with ${primaryAdvisor.name} ${primaryAdvisor.surname} on ${format(sessionDateTime, 'PPP')}.`;
         await addDoc(collection(db, "notifications"), {
@@ -532,39 +534,41 @@ const StudentDashboard = () => {
                         <p className="font-bold text-lg text-slate-800">{session.advisorInfo.name} {session.advisorInfo.surname}</p>
                         <p className="text-xs text-slate-500">Ref: {session.referenceCode}</p>
                     </div>
-                    <div className="text-sm text-right">
-                        <p className="font-semibold text-slate-700">{format(session.sessionDateTime.toDate(), 'MMMM d, yyyy')}</p>
-                        <p className="text-slate-500">{format(session.sessionDateTime.toDate(), 'p')}</p>
-                    </div>
                 </div>
-                <div className="p-4 flex justify-between items-end">
-                    <div className="text-sm space-y-1">
-                        <p><strong className="font-medium text-slate-600">Reason:</strong> {displayReasons}</p>
-                        <p><strong className="font-medium text-slate-600">Type:</strong> {session.sessionType} {isGroup && `(${session.groupMembers?.length || 0} members)`}</p>
-                        {isGroup && session.groupMembers && (
-                            <ul className="pl-5 list-disc text-xs text-slate-500">
-                                {session.groupMembers.map((member, index) => <li key={index}>{member.email}</li>)}
-                            </ul>
-                        )}
-                         <p><strong className="font-medium text-slate-600">Mode:</strong> {session.mode}</p>
-                    </div>
-                    <div className="text-right">
-                        <div className="flex items-center gap-2 mt-4">
-                            <span className="text-sm font-medium text-slate-600">Status:</span>
-                            <div className={`py-1 px-3 rounded-full text-sm font-semibold border ${currentStatusStyle.bg} ${currentStatusStyle.text} ${currentStatusStyle.border}`}>
-                                {session.status}
-                            </div>
+                <div className="p-4">
+                    <div className="flex justify-between items-end">
+                        <div className="text-sm space-y-1">
+                            <p><strong className="font-medium text-slate-600">Reason:</strong> {displayReasons}</p>
+                            <p><strong className="font-medium text-slate-600">Type:</strong> {session.sessionType} {isGroup && `(${session.groupMembers?.length || 0} members)`}</p>
+                             {isGroup && session.groupMembers && (
+                                <ul className="pl-5 list-disc text-xs text-slate-500">
+                                    {session.groupMembers.map((member, index) => <li key={index}>{member.email}</li>)}
+                                </ul>
+                            )}
+                            <p><strong className="font-medium text-slate-600">Mode:</strong> {session.mode}</p>
                         </div>
-                        {(session.status === 'Pending' || session.status === 'Confirmed') && (
-                            <div className="flex gap-2 mt-2">
-                                <Button className="bg-slate-600 hover:bg-slate-700 text-white" size="sm" onClick={() => toast.info("Reschedule feature coming soon.")}>
-                                    Reschedule
-                                </Button>
-                                <Button className="bg-amber-500 hover:bg-amber-600 text-white" size="sm" onClick={() => handleCancelSession(session.id)}>
-                                    Cancel
-                                </Button>
+                        <div className="text-right">
+                            <div className="text-sm">
+                                <p className="font-semibold text-slate-700">{format(session.sessionDateTime.toDate(), 'MMMM d, yyyy')}</p>
+                                <p className="text-slate-500">{format(session.sessionDateTime.toDate(), 'p')}</p>
                             </div>
-                        )}
+                            <div className="flex items-center gap-2 mt-2">
+                                <span className="text-sm font-medium text-slate-600">Status:</span>
+                                <div className={`py-1 px-3 rounded-full text-xs font-semibold border ${currentStatusStyle.bg} ${currentStatusStyle.text} ${currentStatusStyle.border}`}>
+                                    {session.status}
+                                </div>
+                            </div>
+                            {(session.status === 'Pending' || session.status === 'Confirmed') && (
+                                <div className="flex gap-2 mt-2">
+                                    <Button className="bg-slate-600 hover:bg-slate-700 text-white" size="sm" onClick={() => toast.info("Reschedule feature coming soon.")}>
+                                        Reschedule
+                                    </Button>
+                                    <Button className="bg-amber-500 hover:bg-amber-600 text-white" size="sm" onClick={() => handleCancelSession(session.id)}>
+                                        Cancel
+                                    </Button>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
             </CardContent>
