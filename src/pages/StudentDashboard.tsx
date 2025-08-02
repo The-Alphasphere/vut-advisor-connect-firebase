@@ -363,7 +363,6 @@ const StudentDashboard = () => {
       case 'analytics': return <AnalyticsSection />;
       case 'my-advisor': return <MyAdvisorSection />;
       case 'resource-hub': return <ResourceHubSection />;
-      case 'goal-tracker': return <GoalTrackerSection />;
       case 'notifications': return <NotificationsSection />;
       default: return <MainDashboardView />;
     }
@@ -633,50 +632,6 @@ const StudentDashboard = () => {
         </Card>
       </>
     );
-  }
-
-  function GoalTrackerSection() {
-     return (
-       <>
-         <h1 className="text-3xl font-bold mb-8">Goal Tracker</h1>
-         <Card>
-           <CardContent className="p-6">
-             <div className="flex gap-2 mb-4">
-               <Input 
-                 value={newGoal} 
-                 onChange={(e) => setNewGoal(e.target.value)} 
-                 placeholder="Add a new goal..." 
-                 onKeyPress={(e) => e.key === 'Enter' && addGoal()} 
-               />
-               <Button onClick={addGoal}>Add Goal</Button>
-             </div>
-             <div className="space-y-2">
-               {goals.map(goal => (
-                 <div key={goal.id} className="flex items-center gap-3 p-2 rounded hover:bg-accent">
-                   <button onClick={() => toggleGoal(goal.id, goal.completed)}>
-                     {goal.completed ? <CheckSquare className="text-green-500"/> : <Square/>}
-                   </button>
-                   <span className={goal.completed ? 'line-through text-muted-foreground' : ''}>
-                     {goal.text}
-                   </span>
-                   <button 
-                     onClick={() => deleteGoal(goal.id)} 
-                     className="ml-auto text-muted-foreground hover:text-red-500"
-                   >
-                     <Trash2 size={16}/>
-                   </button>
-                 </div>
-               ))}
-               {goals.length === 0 && (
-                 <p className="text-muted-foreground text-center pt-4">
-                   No goals set yet. Add one to get started!
-                 </p>
-               )}
-             </div>
-           </CardContent>
-         </Card>
-       </>
-     );
   }
   
   function NotificationsSection() {
