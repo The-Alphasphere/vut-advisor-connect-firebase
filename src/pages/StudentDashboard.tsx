@@ -53,12 +53,6 @@ interface Session {
   createdAt: any;
 }
 
-interface Goal {
-    id: string;
-    text: string;
-    completed: boolean;
-}
-
 interface Advisor {
     id: string;
     name: string;
@@ -436,11 +430,11 @@ const StudentDashboard = () => {
                 <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveSection('my-sessions')}>
                     <CardHeader><CardTitle className="flex items-center gap-2"><Calendar size={20} /> Latest Sessions</CardTitle></CardHeader>
                     <CardContent>
-                        <div className="space-y-3">
+                        <div className="space-y-2">
                             {recentSessions.length > 0 ? recentSessions.map(session => (
-                                <div key={session.id} className="flex justify-between items-center p-2 rounded-lg">
-                                    <div className="bg-blue-50 p-2 rounded-md text-left flex-1">
-                                        <p className="font-semibold text-blue-800">{session.advisorInfo.name} {session.advisorInfo.surname}</p>
+                                <div key={session.id} className="flex justify-between items-center p-2 rounded-lg bg-slate-50">
+                                    <div className="text-left">
+                                        <p className="font-semibold text-slate-800">{session.advisorInfo.name} {session.advisorInfo.surname}</p>
                                         <p className="text-sm text-muted-foreground">{format(session.sessionDateTime.toDate(), 'PPP, p')}</p>
                                     </div>
                                     <Badge className="ml-4">{session.status}</Badge>
@@ -496,34 +490,49 @@ const StudentDashboard = () => {
     const isGroup = session.sessionType === 'Group';
     const displayReasons = session.reasons.map(r => r === 'Other' ? session.otherReason || 'Other' : r).join(', ');
 
+    const statusStyles: { [key: string]: { bg: string, text: string, border: string } } = {
+        Pending: { bg: 'bg-orange-100', text: 'text-orange-800', border: 'border-orange-300' },
+        Confirmed: { bg: 'bg-amber-100', text: 'text-amber-800', border: 'border-amber-300' },
+        Completed: { bg: 'bg-blue-100', text: 'text-blue-800', border: 'border-blue-300' },
+        Cancelled: { bg: 'bg-red-100', text: 'text-red-800', border: 'border-red-300' },
+        'To Complete': { bg: 'bg-purple-100', text: 'text-purple-800', border: 'border-purple-300' },
+    };
+    
+    const currentStatusStyle = statusStyles[session.status] || { bg: 'bg-gray-100', text: 'text-gray-800', border: 'border-gray-300' };
+
     return (
         <Card>
-            <CardContent className="p-4 flex flex-col sm:flex-row justify-between gap-4">
-                <div className="flex-1 space-y-3">
-                    <div>
-                        <p className="font-semibold text-lg">{session.advisorInfo.name} {session.advisorInfo.surname}</p>
-                        <p className="text-xs text-muted-foreground">Ref: {session.referenceCode}</p>
+            <CardContent className="p-5 flex flex-col sm:flex-row justify-between gap-4">
+                <div className="flex-1">
+                    <div className="flex justify-between items-start mb-4">
+                        <div>
+                            <p className="font-bold text-xl text-slate-800">{session.advisorInfo.name} {session.advisorInfo.surname}</p>
+                            <p className="text-xs text-muted-foreground">Ref: {session.referenceCode}</p>
+                        </div>
+                        <div className="text-sm text-right bg-blue-50 py-2 px-3 rounded-md">
+                            <p className="font-semibold text-blue-800">{format(session.sessionDateTime.toDate(), 'MMMM d, yyyy')}</p>
+                            <p className="text-slate-600">{format(session.sessionDateTime.toDate(), 'p')}</p>
+                        </div>
                     </div>
-                    <div className="text-sm space-y-1">
-                        <p><strong className="font-medium">Reason:</strong> {displayReasons}</p>
-                        <p><strong className="font-medium">Type:</strong> {session.sessionType} {isGroup && `(${session.groupMembers?.length || 0} members)`}</p>
-                        <p><strong className="font-medium">Mode:</strong> {session.mode}</p>
+
+                    <div className="text-sm space-y-1 mb-4">
+                        <p><strong className="font-medium text-slate-600">Reason:</strong> {displayReasons}</p>
+                        <p><strong className="font-medium text-slate-600">Mode:</strong> {session.mode}</p>
+                        <p><strong className="font-medium text-slate-600">Type:</strong> {session.sessionType} {isGroup && `(${session.groupMembers?.length || 0} members)`}</p>
                     </div>
-                </div>
-                <div className="flex flex-col items-start sm:items-end justify-between gap-2">
-                    <div className="text-sm text-right bg-blue-50 p-2 rounded-md">
-                        <p className="font-semibold text-blue-800">{format(session.sessionDateTime.toDate(), 'MMMM d, yyyy')}</p>
-                        <p className="text-muted-foreground">{format(session.sessionDateTime.toDate(), 'p')}</p>
-                    </div>
-                    <div className="flex flex-col items-start sm:items-end gap-2 w-full">
-                        <Badge>{session.status}</Badge>
+
+                    <div className="flex justify-between items-center">
+                        <div className={`py-1 px-4 rounded-full text-sm font-semibold border ${currentStatusStyle.bg} ${currentStatusStyle.text} ${currentStatusStyle.border}`}>
+                            {session.status}
+                        </div>
+                        
                         {(session.status === 'Pending' || session.status === 'Confirmed') && (
-                            <div className="flex gap-2 mt-2">
-                                <Button variant="outline" size="sm" onClick={() => toast.info("Reschedule feature coming soon.")}>
-                                    <Edit size={14} className="mr-1" /> Reschedule
+                            <div className="flex gap-2">
+                                <Button className="bg-slate-600 hover:bg-slate-700 text-white" size="sm" onClick={() => toast.info("Reschedule feature coming soon.")}>
+                                    Reschedule
                                 </Button>
-                                <Button variant="destructive" size="sm" onClick={() => handleCancelSession(session.id)}>
-                                    <XCircle size={14} className="mr-1" /> Cancel
+                                <Button className="bg-amber-500 hover:bg-amber-600 text-white" size="sm" onClick={() => handleCancelSession(session.id)}>
+                                    Cancel
                                 </Button>
                             </div>
                         )}
