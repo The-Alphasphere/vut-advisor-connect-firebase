@@ -501,7 +501,6 @@ const StudentDashboard = () => {
             {sessionsForTab(activeSessionTab).length > 0 ? 
                 sessionsForTab(activeSessionTab).map(s => <SessionCard key={s.id} session={s} />) :
                 <Card><CardContent className="p-6 text-center text-muted-foreground">No sessions in this category.</CardContent></Card>
-            }
         </div>
     </>;
   }
@@ -690,7 +689,7 @@ const StudentDashboard = () => {
         <Card>
             <CardContent className="p-6 text-center text-muted-foreground">
                 Settings page coming soon.
-            </CardContent>
+            </Content>
         </Card>
       </>
     );
