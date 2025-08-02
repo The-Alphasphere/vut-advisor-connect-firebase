@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Home, BarChart2, Bell, User, Calendar, Clock, ChevronLeft, Download, Plus, LogOut, Camera, Link as LinkIcon, Trash2, TrendingUp, Target, Lightbulb, Users, Edit, XCircle, Info, MapPin } from 'lucide-react';
+import { Home, BarChart2, Bell, User, Calendar, Clock, ChevronLeft, ChevronRight, Download, Plus, LogOut, Camera, Link as LinkIcon, Trash2, TrendingUp, Target, Lightbulb, Users, Edit, XCircle, Info, MapPin } from 'lucide-react';
 import { toast } from 'sonner';
 import { format, formatDistanceToNow } from 'date-fns';
 import StudentSessionEvaluation from '@/components/StudentSessionEvaluation';
@@ -546,9 +546,9 @@ const StudentDashboard = () => {
                                 {session.groupMembers.map((member, index) => <li key={index}>{member.email}</li>)}
                             </ul>
                         )}
+                         <p><strong className="font-medium text-slate-600">Mode:</strong> {session.mode}</p>
                     </div>
                     <div className="text-right">
-                        <p><strong className="font-medium text-slate-600">Mode:</strong> {session.mode}</p>
                         <div className="flex items-center gap-2 mt-4">
                             <span className="text-sm font-medium text-slate-600">Status:</span>
                             <div className={`py-1 px-3 rounded-full text-sm font-semibold border ${currentStatusStyle.bg} ${currentStatusStyle.text} ${currentStatusStyle.border}`}>
