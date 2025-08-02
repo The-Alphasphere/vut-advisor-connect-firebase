@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Home, BarChart2, Bell, User, Calendar, Clock, ChevronLeft, Download, Plus, LogOut, Camera, Link as LinkIcon, Flag, CheckSquare, Square, Trash2, TrendingUp, Target, Lightbulb, Users, Edit, XCircle, Info, MapPin } from 'lucide-react';
+import { Home, BarChart2, Bell, User, Calendar, Clock, ChevronLeft, Download, Plus, LogOut, Camera, Link as LinkIcon, Trash2, TrendingUp, Target, Lightbulb, Users, Edit, XCircle, Info, MapPin } from 'lucide-react';
 import { toast } from 'sonner';
 import { format, formatDistanceToNow } from 'date-fns';
 import StudentSessionEvaluation from '@/components/StudentSessionEvaluation';
@@ -241,7 +241,6 @@ const StudentDashboard = () => {
         };
 
         const sessionDocRef = await addDoc(collection(db, "sessions"), newSession);
-        toast.success("Session booked successfully!");
         
         const notificationMessage = `New session booked with ${primaryAdvisor.name} ${primaryAdvisor.surname} on ${format(sessionDateTime, 'PPP')}.`;
         await addDoc(collection(db, "notifications"), {
@@ -257,7 +256,8 @@ const StudentDashboard = () => {
             timestamp: serverTimestamp(),
             isRead: false
         });
-
+        
+        toast.success("Session booked successfully!");
         setShowBookingDialog(false);
 
     } catch (error) {
@@ -502,32 +502,33 @@ const StudentDashboard = () => {
 
     return (
         <Card>
-            <CardContent className="p-5 flex flex-col sm:flex-row justify-between gap-4">
-                <div className="flex-1">
-                    <div className="flex justify-between items-start mb-4 bg-blue-50 p-3 rounded-lg">
-                        <div>
-                            <p className="font-bold text-xl text-blue-900">{session.advisorInfo.name} {session.advisorInfo.surname}</p>
-                            <p className="text-xs text-slate-600">Ref: {session.referenceCode}</p>
+            <CardContent className="p-5">
+                <div className="flex flex-col sm:flex-row justify-between gap-4">
+                    <div className="flex-1">
+                        <div className="flex justify-between items-start mb-4 bg-blue-50 p-3 rounded-lg -m-1">
+                            <div>
+                                <p className="font-bold text-xl text-blue-900">{session.advisorInfo.name} {session.advisorInfo.surname}</p>
+                                <p className="text-xs text-slate-600">Ref: {session.referenceCode}</p>
+                            </div>
+                            <div className="text-sm text-right">
+                                <p className="font-semibold text-blue-800">{format(session.sessionDateTime.toDate(), 'MMMM d, yyyy')}</p>
+                                <p className="text-slate-600">{format(session.sessionDateTime.toDate(), 'p')}</p>
+                            </div>
                         </div>
-                        <div className="text-sm text-right">
-                            <p className="font-semibold text-blue-800">{format(session.sessionDateTime.toDate(), 'MMMM d, yyyy')}</p>
-                            <p className="text-slate-600">{format(session.sessionDateTime.toDate(), 'p')}</p>
+
+                        <div className="text-sm space-y-1 mb-4">
+                            <p><strong className="font-medium text-slate-600">Reason:</strong> {displayReasons}</p>
+                            <p><strong className="font-medium text-slate-600">Mode:</strong> {session.mode}</p>
+                            <p><strong className="font-medium text-slate-600">Type:</strong> {session.sessionType} {isGroup && `(${session.groupMembers?.length || 0} members)`}</p>
                         </div>
                     </div>
-
-                    <div className="text-sm space-y-1 mb-4">
-                        <p><strong className="font-medium text-slate-600">Reason:</strong> {displayReasons}</p>
-                        <p><strong className="font-medium text-slate-600">Mode:</strong> {session.mode}</p>
-                        <p><strong className="font-medium text-slate-600">Type:</strong> {session.sessionType} {isGroup && `(${session.groupMembers?.length || 0} members)`}</p>
-                    </div>
-
-                    <div className="flex justify-between items-center">
+                    <div className="flex flex-col items-start sm:items-end justify-between gap-2 sm:border-l sm:pl-4">
                         <div className={`py-1 px-4 rounded-full text-sm font-semibold border ${currentStatusStyle.bg} ${currentStatusStyle.text} ${currentStatusStyle.border}`}>
                             {session.status}
                         </div>
                         
                         {(session.status === 'Pending' || session.status === 'Confirmed') && (
-                            <div className="flex gap-2">
+                            <div className="flex flex-col gap-2 mt-2 w-full">
                                 <Button className="bg-slate-600 hover:bg-slate-700 text-white" size="sm" onClick={() => toast.info("Reschedule feature coming soon.")}>
                                     Reschedule
                                 </Button>
