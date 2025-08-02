@@ -85,6 +85,7 @@ const BookSessionDialog = ({ open, onOpenChange, onBookSession }: BookSessionDia
     setSelectedReasons(prev => {
         const isSelected = prev.includes(reason);
         if (isSelected) {
+            if (reason === 'Other') setOtherReasonText('');
             return prev.filter(r => r !== reason);
         } else {
             if (prev.length < 4) {
@@ -99,8 +100,8 @@ const BookSessionDialog = ({ open, onOpenChange, onBookSession }: BookSessionDia
 
   const handleStudentSearch = async (index: number) => {
     const member = groupMembers[index];
-    if (!member.studentNumber.trim()) {
-        toast.error("Please enter a student number to search.");
+    if (member.studentNumber.trim().length !== 9) {
+        toast.error("Please enter a valid 9-digit student number.");
         return;
     }
     
@@ -109,7 +110,7 @@ const BookSessionDialog = ({ open, onOpenChange, onBookSession }: BookSessionDia
     setGroupMembers(newMembers);
 
     try {
-        const q = query(collection(db, "users"), where("studentNumber", "==", member.studentNumber.trim()));
+        const q = query(collection(db, "users"), where("studentNumber", "==", member.studentNumber.trim()), where("role", "==", "student"));
         const querySnapshot = await getDocs(q);
         const results: FoundStudent[] = [];
         querySnapshot.forEach((doc) => {
@@ -120,11 +121,7 @@ const BookSessionDialog = ({ open, onOpenChange, onBookSession }: BookSessionDia
         newSearchResults[index] = results;
         setSearchResults(newSearchResults);
 
-        if (results.length === 0) {
-            newMembers[index].status = 'not_found';
-        } else {
-            newMembers[index].status = 'input'; // Back to input to show results
-        }
+        newMembers[index].status = results.length === 0 ? 'not_found' : 'input';
     } catch (error) {
         toast.error("Failed to search for student.");
         newMembers[index].status = 'input';
@@ -160,7 +157,24 @@ const BookSessionDialog = ({ open, onOpenChange, onBookSession }: BookSessionDia
   }, [numberOfStudents, sessionType]);
 
 
-  const validateForm = () => { /* ... validation logic ... */ return true; };
+  const validateForm = () => {
+    if (!selectedDate || !selectedTime || selectedReasons.length === 0) {
+      toast.error('Please fill in all required fields: Date, Time, and Reason.');
+      return false;
+    }
+    if (selectedReasons.includes('Other') && !otherReasonText.trim()) {
+      toast.error('Please specify the reason when "Other" is selected.');
+      return false;
+    }
+    if (sessionType === 'group') {
+        const filledMembers = groupMembers.filter(m => m.status === 'found');
+        if (filledMembers.length !== numberOfStudents) {
+            toast.error(`Please find and select all ${numberOfStudents} students.`);
+            return false;
+        }
+    }
+    return true;
+  };
 
   const handlePreview = () => {
     if (validateForm()) {
@@ -187,7 +201,18 @@ const BookSessionDialog = ({ open, onOpenChange, onBookSession }: BookSessionDia
     onOpenChange(false);
   };
 
-  const resetForm = () => { /* ... reset logic ... */ };
+  const resetForm = () => {
+    setSelectedDate(undefined);
+    setSelectedTime('');
+    setSessionType('individual');
+    setSelectedReasons([]);
+    setOtherReasonText('');
+    setMode('in-person');
+    setNumberOfStudents(1);
+    setGroupMembers([{ studentNumber: '', name: '', surname: '', email: '', status: 'input' }]);
+    setComments('');
+    setMeetLink('');
+  };
 
   return (
     <>
@@ -195,7 +220,7 @@ const BookSessionDialog = ({ open, onOpenChange, onBookSession }: BookSessionDia
         <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle className="flex items-center gap-2"><Plus size={20} /> Book New Session</DialogTitle></DialogHeader>
           
-          <div className="space-y-6">
+          <div className="space-y-6 pt-4">
             {/* Session Type */}
             <div>
               <Label htmlFor="session-type" className="mb-2 block font-medium">Session Type *</Label>
@@ -233,16 +258,20 @@ const BookSessionDialog = ({ open, onOpenChange, onBookSession }: BookSessionDia
                         ) : (
                             <div className="flex gap-2">
                                 <Input 
-                                    placeholder="Enter Student Number" 
+                                    placeholder="Student Number" 
                                     value={member.studentNumber}
+                                    maxLength={9}
                                     onChange={(e) => {
-                                        const newMembers = [...groupMembers];
-                                        newMembers[index].studentNumber = e.target.value;
-                                        setGroupMembers(newMembers);
+                                        const value = e.target.value;
+                                        if (/^\d*$/.test(value)) {
+                                            const newMembers = [...groupMembers];
+                                            newMembers[index].studentNumber = value;
+                                            setGroupMembers(newMembers);
+                                        }
                                     }}
                                 />
                                 <Button onClick={() => handleStudentSearch(index)} disabled={member.status === 'searching'}>
-                                    <Search size={16}/>
+                                    {member.status === 'searching' ? '...' : <Search size={16}/>}
                                 </Button>
                             </div>
                         )}
@@ -262,7 +291,26 @@ const BookSessionDialog = ({ open, onOpenChange, onBookSession }: BookSessionDia
               </div>
             )}
 
-            {/* Date Selection, Reasons, Time, Mode etc. */}
+            {/* Date Selection */}
+            <div>
+                <Label className="mb-2 block font-medium">Select Date *</Label>
+                <Popover>
+                    <PopoverTrigger asChild>
+                        <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !selectedDate && "text-muted-foreground")}>
+                            <Calendar className="mr-2 h-4 w-4" />
+                            {selectedDate ? format(selectedDate, "PPP") : <span>Pick a date</span>}
+                        </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                        <CalendarComponent mode="single" selected={selectedDate} onSelect={setSelectedDate}
+                            disabled={(date) => isWeekend(date) || date < startOfDay(new Date())}
+                            initialFocus
+                        />
+                    </PopoverContent>
+                </Popover>
+            </div>
+            
+            {/* Reason for Session */}
             <div>
                 <Label className="mb-2 block font-medium">Reason for Session * (Max 4)</Label>
                 <Popover>
@@ -299,7 +347,6 @@ const BookSessionDialog = ({ open, onOpenChange, onBookSession }: BookSessionDia
                 </Popover>
             </div>
             
-            {/* Other reason text field */}
             {selectedReasons.includes('Other') && (
                 <div className="mt-3">
                     <Label htmlFor="other-reason" className="mb-1 block text-sm font-medium">Please specify:</Label>
@@ -307,7 +354,29 @@ const BookSessionDialog = ({ open, onOpenChange, onBookSession }: BookSessionDia
                 </div>
             )}
             
-            {/* Online Session Meet Link */}
+            {/* Time Slot */}
+            <div>
+              <Label htmlFor="time-select" className="mb-2 block font-medium">Time Slot *</Label>
+              <Select value={selectedTime} onValueChange={setSelectedTime}>
+                <SelectTrigger id="time-select"><SelectValue placeholder="Choose a time slot" /></SelectTrigger>
+                <SelectContent>
+                  {timeSlots.map(time => (<SelectItem key={time} value={time}>{time}</SelectItem>))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Mode */}
+            <div>
+              <Label htmlFor="mode-select" className="mb-2 block font-medium">Session Mode *</Label>
+              <Select value={mode} onValueChange={setMode}>
+                <SelectTrigger id="mode-select"><SelectValue placeholder="Select mode" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="in-person">In-person</SelectItem>
+                  <SelectItem value="online">Online</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
             {mode === 'online' && (
                 <div>
                     <Label className="mb-2 block font-medium">Meeting Link</Label>
@@ -318,20 +387,45 @@ const BookSessionDialog = ({ open, onOpenChange, onBookSession }: BookSessionDia
                     </div>
                 </div>
             )}
-
-            {/* Other fields like Date, Time, Mode, Comments */}
-            {/* ... */}
+            
+            {/* Additional Comments */}
+            <div>
+              <Label htmlFor="comments" className="mb-2 block font-medium">Additional Comments</Label>
+              <Textarea id="comments" placeholder="Any additional information or special requests..." value={comments} onChange={(e) => setComments(e.target.value)} rows={3}/>
+            </div>
 
             <div className="flex justify-end gap-4">
               <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-              <Button onClick={handlePreview}><Eye size={16} className="mr-2"/> Preview</Button>
+              <Button onClick={handlePreview}><Eye size={16} className="mr-2"/> Preview Booking</Button>
             </div>
           </div>
         </DialogContent>
       </Dialog>
       
       {/* Preview Dialog */}
-      {/* ... */}
+      <AlertDialog open={showPreview} onOpenChange={setShowPreview}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Confirm Your Booking</AlertDialogTitle>
+                <AlertDialogDescription asChild>
+                    <div className="space-y-3 pt-4 text-sm">
+                        <p><strong>Date & Time:</strong> {selectedDate ? format(selectedDate, 'PPP') : 'N/A'} at {selectedTime || 'N/A'}</p>
+                        <p><strong>Advisor:</strong> {advisors.length > 0 ? `${advisors[0].name} ${advisors[0].surname}` : 'N/A'}</p>
+                        <p><strong>Type:</strong> {sessionType === 'individual' ? 'Individual' : 'Group'}</p>
+                        <p><strong>Mode:</strong> {mode === 'in-person' ? 'In-person' : 'Online'}</p>
+                        {mode === 'online' && <p><strong>Link:</strong> <span className="text-blue-600">{meetLink}</span></p>}
+                        <div><strong>Reason(s):</strong><ul className="list-disc pl-5">{selectedReasons.map(r => <li key={r}>{r === 'Other' ? `Other: ${otherReasonText}` : r}</li>)}</ul></div>
+                        {sessionType === 'group' && <div><strong>Group Members:</strong><ul className="list-disc pl-5">{groupMembers.map(m => <li key={m.email}>{m.name} {m.surname} ({m.email})</li>)}</ul></div>}
+                        {comments && <p><strong>Comments:</strong> {comments}</p>}
+                    </div>
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel>Edit</AlertDialogCancel>
+                <AlertDialogAction onClick={handleConfirmBooking}>Confirm</AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 };
