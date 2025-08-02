@@ -501,10 +501,10 @@ const StudentDashboard = () => {
             {sessionsForTab(activeSessionTab).length > 0 ? 
                 sessionsForTab(activeSessionTab).map(s => <SessionCard key={s.id} session={s} />) :
                 <Card><CardContent className="p-6 text-center text-muted-foreground">No sessions in this category.</CardContent></Card>
+            }
         </div>
     </>;
   }
-  
   function TabButton({ title, isActive, onClick}: any) {
     return <button onClick={onClick} className={`py-2 px-4 text-sm font-medium ${isActive ? 'border-b-2 border-primary text-primary' : 'text-muted-foreground'}`}>{title}</button>
   }
@@ -682,4 +682,19 @@ const StudentDashboard = () => {
     );
   }
 
-export default StudentDashboad;
+  function SettingsSection() {
+    return (
+      <>
+        <h1 className="text-3xl font-bold mb-8">Settings</h1>
+        <Card>
+            <CardContent className="p-6 text-center text-muted-foreground">
+                Settings page coming soon.
+            </CardContent>
+        </Card>
+      </>
+    );
+  }
+  
+};
+
+export default StudentDashboard;
